@@ -68,21 +68,26 @@ runbook-toolkit/
 
 ### 3.2 プロジェクトリポジトリ（業務ごと）
 
-プロジェクト固有の定義と生成物を配置する。
+プロジェクト固有の定義と生成物を配置する。定義（YAML）と生成物（Markdown）は別ディレクトリに分離する。
 
 ```
 project-xxx/
 ├── scenarios/
-│   ├── 0100-create-vpc.yaml        # シナリオ定義
-│   └── 0100-create-vpc.md          # ← 生成物
+│   └── 0100-create-vpc.yaml        # シナリオ定義
 ├── runbooks/
 │   ├── 0101-create-vpc.yaml        # 手順書定義
-│   ├── 0101-create-vpc.md          # ← 生成物
-│   ├── 0102-modify-dns-hostname.yaml
-│   └── 0102-modify-dns-hostname.md # ← 生成物
+│   └── 0102-modify-dns-hostname.yaml
+├── dist/                           # 生成物（scenarios/ と runbooks/ の構造をミラー）
+│   ├── scenarios/
+│   │   └── 0100-create-vpc.md      # ← 生成物
+│   └── runbooks/
+│       ├── 0101-create-vpc.md      # ← 生成物
+│       └── 0102-modify-dns-hostname.md
 └── templates/                      # オーバーライド（任意）
     └── ...
 ```
+
+生成物は `dist/` 配下に scenarios/runbooks の構造をミラーして配置する。手順書間の相対リンク（Navigation）はミラー構造内で完結するため、定義側と同じ相対パスでそのまま機能する。
 
 ### 3.3 テンプレート解決順序
 

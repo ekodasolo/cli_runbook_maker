@@ -1,5 +1,19 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: 生成物 .md の dist/ 配下への分離
+
+### 実施内容
+- SPEC §3.2 のプロジェクト構造図を更新。生成物は `project_root/dist/{scenarios,runbooks}/` に scenarios/runbooks の構造をミラーして配置する方針に変更
+- `generate.py` に `dist_output_path()` を追加し、出力先を `project_root/dist/<rel>` に変更（`mkdir -p` 相当の親ディレクトリ作成も実装）
+- 既存生成物 `examples/{scenarios,runbooks}/*.md` を削除し、`examples/dist/` 配下に再生成して動作確認
+
+### 決定事項
+- 配置方式は「dist/ ミラー配置」を採用。理由：
+  - 定義（YAML）と生成物（MD）が完全に分離される
+  - scenarios/runbooks の相対構造を保つため、Navigation 等の相対リンクが定義側と同じ表記でそのまま機能する（scenario → runbook: `../runbooks/X.md`、runbook → runbook: `./X.md`）
+- 生成物は引き続き git にコミットする（SPEC §3.4 の方針維持）
+
+
 ## 2026-05-09: ドキュメント矛盾の修正
 
 ### 実施内容

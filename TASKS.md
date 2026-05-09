@@ -27,9 +27,12 @@
   - 補足：シナリオMD用の `templates/scenario.md.j2` を新設、依存関係は `requirements.txt` に記載
 
 ### 検証
-- [✓] VPC作成シナリオのMarkdown生成（成功：`examples/scenarios/0100-create-vpc.md` ほか2件を生成）
+- [✓] VPC作成シナリオのMarkdown生成（成功：`examples/dist/scenarios/0100-create-vpc.md` ほか2件を生成）
 - [ ] 生成物と現行手順書（0101-CreateVPC-Runbook.md, 0102-ModifyDNSHostname-Runbook.md）の比較確認
 - [ ] 生成物がCloudShellで読みながら実行できる品質であることの確認
+
+### プロジェクト構造の見直し
+- [✓] 生成物 .md を `dist/` 配下に分離（SPEC §3.2 を更新、generate.py を `project_root/dist/` 出力に変更）
 
 ### 既知の課題（テンプレート側、generate.py 自体ではない／次のタスクで扱う）
 - `templates/ec2-modify-vpc-attribute.md.j2` で include する `snippets/ec2/modify-vpc-attribute.md` および `describe-vpc-attribute.md` が `{{ vpc_id }}` を要求するが、テンプレート/YAML 側でセットされていないため `--vpc-id ` の値が空になる。テンプレート側で `{% set vpc_id = "${VPC_ID}" %}` を追加するか、シェル変数として直書きする方針の決定が必要。

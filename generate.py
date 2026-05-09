@@ -48,8 +48,18 @@ def resolve_runbook_path(project_root: Path, runbook_id: str) -> Path:
     return candidate
 
 
+def dist_output_path(project_root: Path, source_yaml: Path) -> Path:
+    """Map a source YAML to its dist/<kind>/<id>.md output.
+
+    e.g. project/runbooks/0101-create-vpc.yaml -> project/dist/runbooks/0101-create-vpc.md
+    """
+    rel = source_yaml.relative_to(project_root)
+    return project_root / "dist" / rel.with_suffix(".md")
+
+
 def render_runbook(
     runbook_yaml_path: Path,
+    project_root: Path,
     scenario_data: dict[str, Any],
     scenario_params: dict[str, Any],
     env: Environment,
@@ -75,20 +85,23 @@ def render_runbook(
     }
     output = template.render(**context)
 
-    out_path = runbook_yaml_path.with_suffix(".md")
+    out_path = dist_output_path(project_root, runbook_yaml_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(output, encoding="utf-8")
     return out_path, runbook
 
 
 def render_scenario(
     scenario_yaml_path: Path,
+    project_root: Path,
     scenario_data: dict[str, Any],
     runbook_summaries: list[dict[str, Any]],
     env: Environment,
 ) -> Path:
     template = env.get_template(SCENARIO_TEMPLATE)
     output = template.render(scenario=scenario_data, steps=runbook_summaries)
-    out_path = scenario_yaml_path.with_suffix(".md")
+    out_path = dist_output_path(project_root, scenario_yaml_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(output, encoding="utf-8")
     return out_path
 
@@ -130,7 +143,9 @@ def main(argv: list[str] | None = None) -> int:
     for step in scenario_data.get("steps") or []:
         runbook_id = step["runbook"]
         runbook_yaml = resolve_runbook_path(project_root, runbook_id)
-        out_path, runbook = render_runbook(runbook_yaml, scenario_data, scenario_params, env)
+        out_path, runbook = render_runbook(
+            runbook_yaml, project_root, scenario_data, scenario_params, env
+        )
         runbook_summaries.append({
             "id": runbook["id"],
             "title": runbook["title"],
@@ -138,7 +153,9 @@ def main(argv: list[str] | None = None) -> int:
         })
         print(f"generated: {out_path.relative_to(project_root)}")
 
-    scenario_out = render_scenario(scenario_yaml_path, scenario_data, runbook_summaries, env)
+    scenario_out = render_scenario(
+        scenario_yaml_path, project_root, scenario_data, runbook_summaries, env
+    )
     print(f"generated: {scenario_out.relative_to(project_root)}")
     return 0
 
