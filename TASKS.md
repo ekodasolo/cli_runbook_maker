@@ -157,19 +157,34 @@
 
 ---
 
-## フェーズ2: SSMパラメータ対応（予定）
+## フェーズ2: SSMパラメータ対応 — 完了
 
-フェーズ1.5（テンプレート汎化）以降、テンプレートは汎用 `runbook.md.j2` 一個に統一されているため、SSM 対応は「**汎用テンプレートをそのまま使う + SSM 用スニペット追加 + サンプル runbook YAML 作成**」で実現する。リソースタイプ専用テンプレートは作らない。
+汎用テンプレート（`runbook.md.j2`）をそのまま使い、SSM 用スニペット追加と runbook YAML 作成のみで実現。**スニペットはアトミックに保ち**、複数パラメータ作成は「1 パラメータ = 1 runbook」のスタイルで分割する方針を採用（ループ展開機構は導入しない）。
 
-設計の要点（議論中）：
-- 複数パラメータの一括作成パターン（put-parameter のループ展開）をどう表現するか
-- ループ展開はスニペット側の `{% for %}` で行う（テンプレートには変更を入れない方針）
-- runbook YAML の `params` に `parameters: [{name, type, value}, ...]` のようなリスト構造を持たせる
+### 設計
+- [✓] スニペットは 1 スニペット = 1 AWS CLI コマンドのアトミック単位を維持
+- [✓] 複数リソース操作は複数の runbook YAML に分割（1 runbook = 1 リソース）
+- [✓] テンプレート、`generate.py`、YAML スキーマには変更を入れない方針
+- [✓] Navigation セクションを `navigation.next` がある場合のみ出力するように改善（シーケンス末尾の runbook で空セクションが出ない）
+- [✓] params ファイルは VPC 系（`training-common.yaml`）と SSM 系（`training-ssm.yaml`）で分離。1.1 のパラメータ表に runbook 実態と関係ない値が出ないようにする
+- [✓] VPC 系（0101, 0102）と SSM 系（0201, 0202）は独立シーケンスとして扱う（VPC の navigation は SSM に繋げない）
 
-着手するスニペット（暫定）：
-- [ ] `snippets/ssm/describe-parameters-by-prefix.md` — prefix で SSM パラメータを一覧（pre/post_check 共用）
-- [ ] `snippets/ssm/put-parameters.md` — 複数パラメータを put-parameter で一括作成（ループ展開）
-- [ ] サンプル：`examples/runbooks/0201-create-ssm-parameters.yaml`
+### 実装
+- [✓] `snippets/ssm/describe-parameter.md` — 指定名のパラメータの非存在確認
+- [✓] `snippets/ssm/put-parameter.md` — パラメータ1件を作成
+- [✓] `snippets/ssm/get-parameter.md` — パラメータの値を取得
+- [✓] `examples/params/training-ssm.yaml` — SSM 用共通パラメータ
+- [✓] `examples/runbooks/0201-create-ssm-parameter-db-host.yaml`
+- [✓] `examples/runbooks/0202-create-ssm-parameter-db-port.yaml`
+- [✓] `templates/runbook.md.j2` — Navigation セクションを条件付き化
+- [✓] SPEC §8 を更新（実装済みスニペット一覧に SSM 系を追加、アトミック原則を明記）
+
+### 検証
+- [✓] 全 4 runbook（0101, 0102, 0201, 0202）の生成成功
+- [✓] 0201 の即値展開が正常（`--name /myapp/training/db/host` 等）
+- [✓] 0202 で Navigation セクションが出力されない（シーケンス末尾）
+- [✓] 0101 / 0102 の Navigation セクションは引き続き出力される（後方互換）
+- [✓] 連続生成で MD5 一致（冪等性）
 
 ## フェーズ3: 追加操作タイプ（予定）
 
