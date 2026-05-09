@@ -17,6 +17,9 @@ runbook:
 
   template: ec2-modify-vpc-attribute
 
+  params_files:
+    - ../params/training-common.yaml
+
   params:
     attribute: enableDnsHostnames
     cli_option: enable-dns-hostnames

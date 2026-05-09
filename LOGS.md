@@ -1,5 +1,26 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: 仕様簡素化の実装追従（generate.py 刷新）
+
+### 実施内容
+- `generate.py` を新仕様（SPEC §7）に合わせて書き直した
+  - 位置引数で runbook YAML を1〜複数受け取る形に変更（`--toolkit` / `--scenario` を撤廃）
+  - テンプレート・スニペットの探索パスを `Path(__file__).parent` 直下に固定（`FileSystemLoader([TOOLKIT_ROOT])`）
+  - `runbook.params_files` を runbook YAML からの相対パスで解決し、列挙順マージ → `runbook.params` で上書き
+  - 出力先を `<runbook>.parent.parent/dist/runbooks/<basename>.md` に固定
+  - シナリオ関連ロジック（`SCENARIO_TEMPLATE`、`render_scenario`、scenario context）を全削除
+- 旧 `examples/scenarios/0100-create-vpc.yaml` の `params:` を `examples/params/training-common.yaml` に移設
+- `examples/runbooks/*.yaml` に `params_files: [../params/training-common.yaml]` を追記
+- `templates/scenario.md.j2`、`examples/scenarios/`、`examples/dist/scenarios/` を削除
+- 新CLIで生成し、`examples/dist/runbooks/{0101-create-vpc,0102-modify-dns-hostname}.md` が移行前のベースラインと `diff -u` でバイト単位完全一致することを確認
+
+### 決定事項
+- `params_files` のパス解決基準は runbook YAML ファイルの位置とする。CLI 実行ディレクトリには依存させない（複数の runbook を異なるディレクトリから指定された場合でも各 YAML 自身の位置から相対解決される）
+- params YAML のフォーマットは「トップレベルに `params:` キーを置き、その下にフラットな key-value」で固定。マッピング以外を渡された場合は `ValueError` で停止する
+- 複数 runbook 指定時のエラーは1件ずつ報告して残りを継続生成する。終了コードはファイル不在=2、テンプレ／YAML 不正=1、全件成功=0
+- 旧 generate.py が出力していたシナリオ MD は廃止。手順書一覧の提示は将来 README 等のドキュメントで担う方針（SPEC §2 補足の通り）
+
+
 ## 2026-05-09: 仕様の簡素化（3層 → 2層、シングルリポジトリ化）
 
 ### 実施内容

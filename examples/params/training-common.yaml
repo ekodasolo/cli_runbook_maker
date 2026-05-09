@@ -1,0 +1,9 @@
+# Training用VPC作成プロジェクトの共通パラメータ
+#
+# 複数の手順書から params_files: で参照される共通値を集約する。
+# 業務単位や環境単位で分割したくなったら、ファイルを増やして
+# runbook YAML 側の params_files に追記する。
+params:
+  region: ap-northeast-1
+  vpc_cidr: "10.0.0.0/24"
+  vpc_name: "project-dev-main-vpc"

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """AWS CLI Runbook generator.
 
-Reads a scenario YAML and the runbook YAMLs it references, then renders
-Markdown using Jinja2 templates and snippets.
+Reads one or more runbook YAML files and renders Markdown using Jinja2
+templates and snippets bundled in the same directory as this script.
 
 Usage:
-    python generate.py \\
-        --toolkit /path/to/runbook-toolkit \\
-        --scenario examples/scenarios/0100-create-vpc.yaml
+    python generate.py path/to/runbook.yaml [path...]
+
+Output:
+    Each <runbook>.yaml under <project>/runbooks/ is rendered to
+    <project>/dist/runbooks/<basename>.md, where <project> is the parent
+    of the runbooks/ directory.
 """
 
 from __future__ import annotations
@@ -21,143 +24,134 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 
-SCENARIO_TEMPLATE = "templates/scenario.md.j2"
+# Toolkit assets (templates/, snippets/) live next to this script.
+TOOLKIT_ROOT = Path(__file__).resolve().parent
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        return yaml.safe_load(f) or {}
 
 
-def build_env(project_root: Path, toolkit_root: Path) -> Environment:
-    search_paths: list[str] = [str(project_root)]
-    if toolkit_root.resolve() != project_root.resolve():
-        search_paths.append(str(toolkit_root))
+def build_env() -> Environment:
     return Environment(
-        loader=FileSystemLoader(search_paths),
+        loader=FileSystemLoader(str(TOOLKIT_ROOT)),
         keep_trailing_newline=True,
         trim_blocks=True,
         lstrip_blocks=True,
     )
 
 
-def resolve_runbook_path(project_root: Path, runbook_id: str) -> Path:
-    candidate = project_root / "runbooks" / f"{runbook_id}.yaml"
-    if not candidate.exists():
-        raise FileNotFoundError(f"Runbook YAML not found: {candidate}")
-    return candidate
+def load_params_files(runbook_yaml_path: Path, params_files: list[str]) -> dict[str, Any]:
+    """Load and merge param files referenced from a runbook YAML.
 
-
-def dist_output_path(project_root: Path, source_yaml: Path) -> Path:
-    """Map a source YAML to its dist/<kind>/<id>.md output.
-
-    e.g. project/runbooks/0101-create-vpc.yaml -> project/dist/runbooks/0101-create-vpc.md
+    Paths are resolved relative to the runbook YAML file. Later files
+    override earlier ones (last write wins).
     """
-    rel = source_yaml.relative_to(project_root)
-    return project_root / "dist" / rel.with_suffix(".md")
+    merged: dict[str, Any] = {}
+    base_dir = runbook_yaml_path.parent
+    for rel in params_files:
+        params_path = (base_dir / rel).resolve()
+        if not params_path.exists():
+            raise FileNotFoundError(
+                f"params file not found: {params_path} "
+                f"(referenced by {runbook_yaml_path.name})"
+            )
+        data = load_yaml(params_path)
+        params = data.get("params") or {}
+        if not isinstance(params, dict):
+            raise ValueError(
+                f"params file must have a top-level 'params:' mapping: {params_path}"
+            )
+        merged.update(params)
+    return merged
 
 
-def render_runbook(
-    runbook_yaml_path: Path,
-    project_root: Path,
-    scenario_data: dict[str, Any],
-    scenario_params: dict[str, Any],
-    env: Environment,
-) -> tuple[Path, dict[str, Any]]:
-    runbook = load_yaml(runbook_yaml_path)["runbook"]
-    template_name = runbook["template"]
+def dist_output_path(runbook_yaml_path: Path) -> Path:
+    """Map a runbook YAML to its dist output path.
+
+    e.g. <project>/runbooks/0101-create-vpc.yaml
+       -> <project>/dist/runbooks/0101-create-vpc.md
+    """
+    project_root = runbook_yaml_path.parent.parent
+    basename = runbook_yaml_path.stem
+    return project_root / "dist" / "runbooks" / f"{basename}.md"
+
+
+def render_runbook(runbook_yaml_path: Path, env: Environment) -> Path:
+    data = load_yaml(runbook_yaml_path)
+    if "runbook" not in data:
+        raise ValueError(
+            f"runbook YAML must have a top-level 'runbook:' key: {runbook_yaml_path}"
+        )
+    runbook = data["runbook"]
+
+    template_name = runbook.get("template")
+    if not template_name:
+        raise ValueError(
+            f"runbook.template is required: {runbook_yaml_path}"
+        )
+
+    params_files = runbook.get("params_files") or []
     runbook_params = runbook.get("params") or {}
-    merged_params = {**scenario_params, **runbook_params}
+    merged_params = {
+        **load_params_files(runbook_yaml_path, params_files),
+        **runbook_params,
+    }
 
     template_path = f"templates/{template_name}.md.j2"
     try:
         template = env.get_template(template_path)
     except TemplateNotFound as e:
         raise FileNotFoundError(
-            f"Template not found: {template_path} (referenced by {runbook_yaml_path.name})"
+            f"template not found: {template_path} "
+            f"(referenced by {runbook_yaml_path.name})"
         ) from e
 
     context = {
         "runbook": runbook,
-        "scenario": scenario_data,
         "navigation": runbook.get("navigation") or {},
         **merged_params,
     }
     output = template.render(**context)
 
-    out_path = dist_output_path(project_root, runbook_yaml_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(output, encoding="utf-8")
-    return out_path, runbook
-
-
-def render_scenario(
-    scenario_yaml_path: Path,
-    project_root: Path,
-    scenario_data: dict[str, Any],
-    runbook_summaries: list[dict[str, Any]],
-    env: Environment,
-) -> Path:
-    template = env.get_template(SCENARIO_TEMPLATE)
-    output = template.render(scenario=scenario_data, steps=runbook_summaries)
-    out_path = dist_output_path(project_root, scenario_yaml_path)
+    out_path = dist_output_path(runbook_yaml_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(output, encoding="utf-8")
     return out_path
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate AWS CLI runbooks from YAML.")
-    parser.add_argument(
-        "--toolkit", required=True,
-        help="Path to runbook-toolkit (directory containing snippets/ and templates/).",
+    parser = argparse.ArgumentParser(
+        description="Generate AWS CLI runbooks from YAML.",
     )
     parser.add_argument(
-        "--scenario", required=True,
-        help="Path to scenario YAML.",
-    )
-    parser.add_argument(
-        "--project",
-        help="Path to project root. Defaults to the parent of the scenario file's directory "
-             "(e.g. scenarios/ → its parent).",
+        "runbooks",
+        nargs="+",
+        help="Path(s) to runbook YAML file(s).",
     )
     args = parser.parse_args(argv)
 
-    toolkit_root = Path(args.toolkit).resolve()
-    scenario_yaml_path = Path(args.scenario).resolve()
-    project_root = (
-        Path(args.project).resolve()
-        if args.project
-        else scenario_yaml_path.parent.parent
-    )
-
-    if not scenario_yaml_path.exists():
-        print(f"error: scenario not found: {scenario_yaml_path}", file=sys.stderr)
-        return 2
-
-    scenario_data = load_yaml(scenario_yaml_path)["scenario"]
-    scenario_params = scenario_data.get("params") or {}
-    env = build_env(project_root, toolkit_root)
-
-    runbook_summaries: list[dict[str, Any]] = []
-    for step in scenario_data.get("steps") or []:
-        runbook_id = step["runbook"]
-        runbook_yaml = resolve_runbook_path(project_root, runbook_id)
-        out_path, runbook = render_runbook(
-            runbook_yaml, project_root, scenario_data, scenario_params, env
-        )
-        runbook_summaries.append({
-            "id": runbook["id"],
-            "title": runbook["title"],
-            "link": f"../runbooks/{runbook_id}.md",
-        })
-        print(f"generated: {out_path.relative_to(project_root)}")
-
-    scenario_out = render_scenario(
-        scenario_yaml_path, project_root, scenario_data, runbook_summaries, env
-    )
-    print(f"generated: {scenario_out.relative_to(project_root)}")
-    return 0
+    env = build_env()
+    exit_code = 0
+    for raw in args.runbooks:
+        runbook_yaml = Path(raw).resolve()
+        if not runbook_yaml.exists():
+            print(f"error: runbook not found: {runbook_yaml}", file=sys.stderr)
+            exit_code = 2
+            continue
+        try:
+            out_path = render_runbook(runbook_yaml, env)
+        except (FileNotFoundError, ValueError) as e:
+            print(f"error: {e}", file=sys.stderr)
+            exit_code = 1
+            continue
+        try:
+            display = out_path.relative_to(Path.cwd())
+        except ValueError:
+            display = out_path
+        print(f"generated: {display}")
+    return exit_code
 
 
 if __name__ == "__main__":
