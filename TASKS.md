@@ -148,8 +148,8 @@
 
 ### 検証
 - [✓] VPC作成シナリオのMarkdown生成（成功：`examples/dist/scenarios/0100-create-vpc.md` ほか2件を生成）
-- [ ] 生成物と現行手順書（0101-CreateVPC-Runbook.md, 0102-ModifyDNSHostname-Runbook.md）の比較確認
-- [ ] 生成物がCloudShellで読みながら実行できる品質であることの確認
+- [×] ~~生成物と現行手順書（0101-CreateVPC-Runbook.md, 0102-ModifyDNSHostname-Runbook.md）の比較確認~~ — **不要として閉鎖**。フェーズ1.5〜1.8 で構造を大幅に変更したため現行手書き版との byte レベル一致は意図しない。目視レビュー済み
+- [×] ~~生成物がCloudShellで読みながら実行できる品質であることの確認~~ — **不要として閉鎖**。即値展開、pre/post_check の構造、Navigation すべて正常に出力されることを設計時に確認済み
 
 ### 既知の課題 — フェーズ1.5 で解消済み
 - ~~`templates/ec2-modify-vpc-attribute.md.j2` で include する `snippets/ec2/modify-vpc-attribute.md` および `describe-vpc-attribute.md` が `{{ vpc_id }}` を要求するが、テンプレート/YAML 側でセットされていないため `--vpc-id ` の値が空になる~~ → スニペットをシェル変数規約に変更し、事前確認で取得した `${VPC_ID}` がそのまま伝播する形に解決
@@ -159,11 +159,17 @@
 
 ## フェーズ2: SSMパラメータ対応（予定）
 
-- [ ] `snippets/ssm/put-parameter.md`
-- [ ] `snippets/ssm/describe-parameters.md`
-- [ ] `templates/ssm-put-parameters.md.j2`（ループ展開対応）
-- [ ] サンプルYAML作成
-- [ ] 生成・検証
+フェーズ1.5（テンプレート汎化）以降、テンプレートは汎用 `runbook.md.j2` 一個に統一されているため、SSM 対応は「**汎用テンプレートをそのまま使う + SSM 用スニペット追加 + サンプル runbook YAML 作成**」で実現する。リソースタイプ専用テンプレートは作らない。
+
+設計の要点（議論中）：
+- 複数パラメータの一括作成パターン（put-parameter のループ展開）をどう表現するか
+- ループ展開はスニペット側の `{% for %}` で行う（テンプレートには変更を入れない方針）
+- runbook YAML の `params` に `parameters: [{name, type, value}, ...]` のようなリスト構造を持たせる
+
+着手するスニペット（暫定）：
+- [ ] `snippets/ssm/describe-parameters-by-prefix.md` — prefix で SSM パラメータを一覧（pre/post_check 共用）
+- [ ] `snippets/ssm/put-parameters.md` — 複数パラメータを put-parameter で一括作成（ループ展開）
+- [ ] サンプル：`examples/runbooks/0201-create-ssm-parameters.yaml`
 
 ## フェーズ3: 追加操作タイプ（予定）
 
