@@ -18,7 +18,11 @@ runbook:
 
   template: ec2-create-vpc
 
-  # この手順書固有のパラメータ（任意）
+  # 共通パラメータファイル（runbook YAML からの相対パス）
+  params_files:
+    - ../params/training-common.yaml
+
+  # この手順書固有のパラメータ（params_files より優先）
   params: {}
 
   navigation:

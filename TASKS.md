@@ -1,26 +1,29 @@
 # Runbook Toolkit タスクリスト
 
-## フェーズ0: 仕様の簡素化（実施中）
+## フェーズ0: 仕様の簡素化 — 完了
 
-3層構造（シナリオ／手順書／スニペット）から2層構造（手順書／スニペット）に変更し、ツールキット／プロジェクトのリポジトリ分離も廃止する。詳細は SPEC.md 参照。
+3層構造（シナリオ／手順書／スニペット）から2層構造（手順書／スニペット）に変更し、ツールキット／プロジェクトのリポジトリ分離も廃止した。詳細は SPEC.md 参照。
 
 ### 仕様ドキュメントの刷新
 - [✓] SPEC.md の刷新（2層構造、シングルリポジトリ、`params_files` 機構、新CLI）
 - [✓] TASKS.md の刷新（本ファイル）
 - [✓] LOGS.md に簡素化方針の決定を記録
 
-### 実装の追従（次のブランチで実施）
-- [ ] `generate.py` のCLI簡素化
-  - [ ] 位置引数で runbook YAML を受け取り（複数可）、`--toolkit`／`--scenario` を廃止
-  - [ ] テンプレート・スニペットの探索パスを `generate.py` 隣接ディレクトリに固定
-  - [ ] `params_files` フィールドの読み込みとマージ順の実装
-  - [ ] 出力先を `<runbook>.parent.parent/dist/runbooks/<basename>.md` に変更
-- [ ] `templates/scenario.md.j2` を削除
-- [ ] `examples/scenarios/` を削除（README 等で手順書一覧を案内する形に置き換え）
-- [ ] 既存の `examples/scenarios/0100-create-vpc.yaml` の `params:` を `examples/params/training-common.yaml` に移設
-- [ ] `examples/runbooks/*.yaml` に `params_files: [../params/training-common.yaml]` を追記
-- [ ] `examples/runbooks/0101-create-vpc.yaml` に `navigation.next` を移設（現状はシナリオ側で順序が決まっているため）
-- [ ] 動作検証：新CLIで `examples/runbooks/*.yaml` を生成し、`examples/dist/runbooks/*.md` が以前と同等の出力になることを確認
+### 実装の追従（feature/cli-simplification）
+- [✓] `generate.py` のCLI簡素化
+  - [✓] 位置引数で runbook YAML を受け取り（複数可）、`--toolkit`／`--scenario` を廃止
+  - [✓] テンプレート・スニペットの探索パスを `generate.py` 隣接ディレクトリに固定
+  - [✓] `params_files` フィールドの読み込みとマージ順の実装
+  - [✓] 出力先を `<runbook>.parent.parent/dist/runbooks/<basename>.md` に変更
+- [✓] `templates/scenario.md.j2` を削除
+- [✓] `examples/scenarios/` を削除（手順書一覧の提示は今後 README 等で行う）
+- [✓] 旧 `examples/scenarios/0100-create-vpc.yaml` の `params:` を `examples/params/training-common.yaml` に移設
+- [✓] `examples/runbooks/*.yaml` に `params_files: [../params/training-common.yaml]` を追記
+- [✓] 動作検証：新CLIで `examples/runbooks/*.yaml` を生成し、`examples/dist/runbooks/*.md` が以前と完全一致（`diff -u` で差分なし）することを確認
+
+備考：
+- `0101-create-vpc.yaml` の `navigation.next` は元から runbook YAML 側に存在していたため移設不要だった
+- 旧 generate.py のシナリオ MD 出力は廃止。フェーズ1の「シナリオMD生成成功」の検証項目はもう該当しない
 
 ---
 
