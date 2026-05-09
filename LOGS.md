@@ -1,5 +1,19 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: バリデーション機構の方針決定（将来タスク）
+
+### 実施内容
+- snippet と runbook を繋ぐパラメータインターフェイスは Jinja2 変数（生成時）とシェル変数（実行時）の2層で、いずれも「規約」だけの疎結合（型・スキーマなし）であることを再確認
+- 生成時に検知できない2種類の typo（snippet 側 typo、runbook 側 missing param）について、validation 機構の必要性を議論
+- 採用方針として「**vars.yaml + StrictUndefined の組み合わせ**」を決定。実装は将来タスクとして TASKS.md に登録
+
+### 決定事項
+- **service 単位の `vars.yaml`** で「この service で使ってよい変数」を宣言（snippet 側 typo を catch + 語彙の文書化）
+- **Jinja2 を `StrictUndefined` モードに切り替え** て runbook 側 missing param を生成時例外化
+- snippet 単位の YAML frontmatter による required vars 宣言案は、Markdown 可読性低下と実装コストのため不採用（service 単位で十分という判断）
+- 実施タイミングは「snippet 30 件超え or 書き手複数化」が目安。現状（14 件、書き手少数）では目視レビューで賄えており YAGNI
+
+
 ## 2026-05-09: SSM 追加テスト — UPDATE と LABEL（フェーズ2.1）
 
 ### 実施内容

@@ -215,6 +215,61 @@
 - [✓] 0101 / 0102 の Navigation セクションは引き続き出力される（後方互換）
 - [✓] 連続生成で MD5 一致（冪等性）
 
+## 将来のタスク（実装は後回し）
+
+### スニペット変数のバリデーション機構
+
+#### 背景
+スニペットと runbook の interface は Jinja2 変数（生成時）とシェル変数（実行時）の2層で、いずれも「規約」だけの疎結合（型・スキーマなし）。現状、生成時に2種類の typo が silently 通る：
+
+- **A. snippet 側の typo**：snippet に `{{ regoin }}` のような誤記。生成 MD に `--region ` のような空欄が残る
+- **B. runbook 側の missing param**：snippet が必要とする変数を runbook が提供していない。同じく空欄になる
+
+snippet 数や書き手が増えると、目視レビューで catch しきれなくなる。
+
+#### 採用方針
+**vars.yaml + StrictUndefined の組み合わせ** を採用する。
+
+- `snippets/{service}/vars.yaml` で「この service で使ってよい変数」を service 単位で宣言（A を catch、語彙の文書化を兼ねる）
+- Jinja2 の `Environment` を `undefined=StrictUndefined` に切り替え（B を catch）
+
+#### vars.yaml の形式（案）
+
+```yaml
+# snippets/ssm/vars.yaml
+vars:
+  - name: parameter_name
+    description: SSM パラメータの完全名（例: /myapp/training/db/host）
+  - name: parameter_type
+    description: SSM パラメータの型（String / StringList / SecureString）
+  - name: parameter_value
+    description: 設定する値
+  - name: parameter_description
+    description: パラメータの説明文
+  - name: parameter_labels
+    description: ラベルのリスト
+  - name: region
+    description: 対象リージョン
+```
+
+#### 実装サブタスク
+- [ ] `snippets/ec2/vars.yaml` / `snippets/ssm/vars.yaml` の作成
+- [ ] `generate.py` に snippet 内 `{{ X }}` 抽出ロジックを追加
+- [ ] `generate.py` で snippet が参照する変数を service の vars.yaml と突合し、未宣言変数があればエラー
+- [ ] `generate.py` の Jinja2 Environment を `undefined=StrictUndefined` に切り替え
+- [ ] `templates/runbook.md.j2` の optional フィールドアクセス（`{% if check.description %}` 等）を StrictUndefined と両立する形に書き換え（`'description' in check` 等）
+- [ ] SPEC §6.6 に validation 方針の節を追記
+
+#### 検討から外した代替案
+- **snippet ごとの YAML frontmatter で required vars 宣言**：粒度はより精確になるが、snippet ファイルに YAML が混じることで Markdown としての可読性が下がる。service 単位で十分と判断
+- **vars.yaml だけで済ませる**：A しか catch できない。B が見逃しのままになるので不採用
+
+#### 実施タイミング
+- snippet が 30 件を超えるあたり、または書き手が複数になった時点で着手するのが妥当
+- 現状（snippet 14 件、書き手少数）は目視レビューで賄えており、今は YAGNI
+
+---
+
 ## フェーズ3: 追加操作タイプ（予定）
 
 - [ ] S3: バケット作成、バージョニング設定
