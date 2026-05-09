@@ -41,7 +41,7 @@ SSM パラメータ作成のCLI手順書。
 
 指定パラメータがまだ作成されていないことを確認する。
 
-指定パラメータがまだ存在していないか確認する。
+指定名のパラメータの状態を確認する。
 
 ```bash
 aws ssm describe-parameters \
@@ -49,9 +49,25 @@ aws ssm describe-parameters \
     --region ap-northeast-1
 ```
 
-`Parameters` が空配列なら、まだ作成されていない（期待通り）。
+パラメータが存在する場合の結果例:
+```output
+{
+    "Parameters": [
+        {
+            "Name": "/myapp/training/db/port",
+            "Type": "String",
+            "LastModifiedDate": "2026-05-09T10:23:45.000000+09:00",
+            "LastModifiedUser": "arn:aws:iam::010905949244:user/admin",
+            "Version": 1,
+            "Tier": "Standard",
+            "Policies": [],
+            "DataType": "text"
+        }
+    ]
+}
+```
 
-結果の例
+パラメータが存在しない場合の結果例:
 ```output
 {
     "Parameters": []
@@ -113,5 +129,9 @@ aws ssm get-parameter \
 }
 ```
 
+
+#### Navigation
+
+Next: [SSM パラメータ /myapp/training/db/host を更新する](./0203-update-ssm-parameter-db-host.md)
 
 # EOD

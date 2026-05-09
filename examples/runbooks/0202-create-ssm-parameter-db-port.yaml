@@ -42,5 +42,7 @@ runbook:
     parameter_value: "5432"
     parameter_description: "Training environment DB port"
 
-  # 0202 はシーケンスの末尾。navigation.next を持たない場合、
-  # Navigation セクションごと出力されない。
+  navigation:
+    next:
+      title: "SSM パラメータ /myapp/training/db/host を更新する"
+      link: "./0203-update-ssm-parameter-db-host.md"

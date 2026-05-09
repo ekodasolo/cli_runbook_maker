@@ -157,6 +157,35 @@
 
 ---
 
+## フェーズ2.1: SSM 追加テスト（パラメータ更新・ラベル付与） — 完了
+
+フェーズ2 の設計が異なる SSM 操作（CREATE 以外）に通用するかの検証として、UPDATE と LABEL の2 runbook を追加。
+
+### 設計
+- [✓] 「1 runbook = 1 リソース」「アトミックスニペット」「即値原則」をそのまま適用
+- [✓] `describe-parameter.md` を「存在/非存在の両ケースを例示」する中立形式に書き直す（0201/0202 の create と 0203/0204 の update/label の両方で使えるように）
+- [✓] `--overwrite` 用の `put-parameter-overwrite.md` を新スニペットとして分離（`put-parameter.md` との混在を避ける）
+- [✓] Navigation を 0201 → 0202 → 0203 → 0204 の線形シーケンスで連結
+
+### 実装
+- [✓] `snippets/ssm/describe-parameter.md` を中立化（narrative を「状態を確認」に）
+- [✓] `snippets/ssm/put-parameter-overwrite.md` 新設
+- [✓] `snippets/ssm/label-parameter-version.md` 新設
+- [✓] `snippets/ssm/get-parameter-history.md` 新設
+- [✓] `examples/runbooks/0203-update-ssm-parameter-db-host.yaml`
+- [✓] `examples/runbooks/0204-label-ssm-parameter-db-host.yaml`
+- [✓] `examples/runbooks/0202-create-ssm-parameter-db-port.yaml` の navigation.next を 0203 に追加
+- [✓] SPEC §8 に新スニペットを追加
+
+### 検証
+- [✓] 全 6 runbook（0101, 0102, 0201, 0202, 0203, 0204）が生成成功
+- [✓] 0203 の主処理に `--overwrite` フラグ、Version: 2 への増加が反映
+- [✓] 0204 の主処理が `aws ssm label-parameter-version`、post-check で `Labels: ["production-2026-q2"]` 表示
+- [✓] Navigation 連鎖（0201→0202→0203→0204）と末尾 0204 で Navigation セクション無し
+- [✓] 連続生成で MD5 一致（冪等性）
+
+---
+
 ## フェーズ2: SSMパラメータ対応 — 完了
 
 汎用テンプレート（`runbook.md.j2`）をそのまま使い、SSM 用スニペット追加と runbook YAML 作成のみで実現。**スニペットはアトミックに保ち**、複数パラメータ作成は「1 パラメータ = 1 runbook」のスタイルで分割する方針を採用（ループ展開機構は導入しない）。

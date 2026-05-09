@@ -1,0 +1,48 @@
+runbook:
+  id: "0203"
+  title: "SSM パラメータ /myapp/training/db/host を更新する"
+  about: |
+    SSM パラメータ更新のCLI手順書。
+
+    本手順では、SSM Parameter Store に登録済みのパラメータの値を更新する。
+  services:
+    - SSM/Parameter Store
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - パラメータ /myapp/training/db/host が作成済みであること（0201 が完了済み）。
+  after:
+    - パラメータ /myapp/training/db/host の値が指定どおりに更新されていること。
+    - パラメータの Version が 2 以上に増えていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象パラメータの存在確認"
+      description: |
+        指定パラメータが既に作成されていることを確認する（更新対象として存在することを確認）。
+      snippet: snippets/ssm/describe-parameter.md
+
+  main:
+    snippet: snippets/ssm/put-parameter-overwrite.md
+
+  post_checks:
+    - title: "更新後の値の確認"
+      description: |
+        パラメータの値が指定どおりに更新されていることを確認する。
+      snippet: snippets/ssm/get-parameter.md
+
+  params_files:
+    - ../params/training-ssm.yaml
+
+  params:
+    parameter_name: /myapp/training/db/host
+    parameter_type: String
+    parameter_value: db.example.internal
+    parameter_description: "Training environment DB host (updated for internal access)"
+
+  navigation:
+    next:
+      title: "SSM パラメータ /myapp/training/db/host にラベルを付与する"
+      link: "./0204-label-ssm-parameter-db-host.md"

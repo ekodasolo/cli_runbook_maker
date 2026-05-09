@@ -1,9 +1,9 @@
-# [0201] SSM パラメータ /myapp/training/db/host を作成する
+# [0203] SSM パラメータ /myapp/training/db/host を更新する
 
 ## About
-SSM パラメータ作成のCLI手順書。
+SSM パラメータ更新のCLI手順書。
 
-本手順では、SSM Parameter Store にトレーニング用 DB ホスト名のパラメータを登録する。
+本手順では、SSM Parameter Store に登録済みのパラメータの値を更新する。
 
 
 ## When: 作業の条件
@@ -11,13 +11,13 @@ SSM パラメータ作成のCLI手順書。
 ### Before: 事前前提条件
 
 以下を作業の前提条件とする。
-1. 同名のパラメータがまだ作成されていないこと。
+1. パラメータ /myapp/training/db/host が作成済みであること（0201 が完了済み）。
 
 ### After: 作業終了状況
 
 以下が完了の条件。
-1. パラメータ /myapp/training/db/host が作成されていること。
-1. 値が指定どおりに設定されていること。
+1. パラメータ /myapp/training/db/host の値が指定どおりに更新されていること。
+1. パラメータの Version が 2 以上に増えていること。
 
 
 ## How: 以下は作業手順
@@ -34,12 +34,12 @@ SSM パラメータ作成のCLI手順書。
 | parameter_namespace | `/myapp/training/` |
 | parameter_name | `/myapp/training/db/host` |
 | parameter_type | `String` |
-| parameter_value | `db.example.com` |
-| parameter_description | `Training environment DB host` |
+| parameter_value | `db.example.internal` |
+| parameter_description | `Training environment DB host (updated for internal access)` |
 
-#### 1.2 既存パラメータの非存在確認
+#### 1.2 対象パラメータの存在確認
 
-指定パラメータがまだ作成されていないことを確認する。
+指定パラメータが既に作成されていることを確認する（更新対象として存在することを確認）。
 
 指定名のパラメータの状態を確認する。
 
@@ -77,32 +77,35 @@ aws ssm describe-parameters \
 
 ### 2. 主処理
 
-#### 2.1 リソースの操作 (CREATE)
+#### 2.1 リソースの操作 (MODIFY)
 
-SSM パラメータを作成する。
+SSM パラメータを上書きする（既存値を更新する）。
 
 ```bash
 aws ssm put-parameter \
     --name /myapp/training/db/host \
     --type String \
-    --value "db.example.com" \
-    --description "Training environment DB host" \
+    --value "db.example.internal" \
+    --description "Training environment DB host (updated for internal access)" \
+    --overwrite \
     --region ap-northeast-1
 ```
+
+更新が成功すると、`Version` がインクリメントされた値で返る。
 
 結果の例
 ```output
 {
-    "Version": 1,
+    "Version": 2,
     "Tier": "Standard"
 }
 ```
 
 ### 3. 後処理
 
-#### 3.1 作成パラメータの値確認
+#### 3.1 更新後の値の確認
 
-パラメータが作成され、値が指定どおりに設定されていることを確認する。
+パラメータの値が指定どおりに更新されていることを確認する。
 
 SSM パラメータの値を取得する。
 
@@ -120,7 +123,7 @@ aws ssm get-parameter \
     "Parameter": {
         "Name": "/myapp/training/db/host",
         "Type": "String",
-        "Value": "db.example.com",
+        "Value": "db.example.internal",
         "Version": 1,
         "LastModifiedDate": "2026-05-09T10:23:45.000000+09:00",
         "ARN": "arn:aws:ssm:ap-northeast-1:010905949244:parameter/myapp/training/db/host",
@@ -132,6 +135,6 @@ aws ssm get-parameter \
 
 #### Navigation
 
-Next: [SSM パラメータ /myapp/training/db/port を作成する](./0202-create-ssm-parameter-db-port.md)
+Next: [SSM パラメータ /myapp/training/db/host にラベルを付与する](./0204-label-ssm-parameter-db-host.md)
 
 # EOD

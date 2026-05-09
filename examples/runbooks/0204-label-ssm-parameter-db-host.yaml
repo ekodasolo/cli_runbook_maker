@@ -1,0 +1,46 @@
+runbook:
+  id: "0204"
+  title: "SSM パラメータ /myapp/training/db/host にラベルを付与する"
+  about: |
+    SSM パラメータラベル付与のCLI手順書。
+
+    本手順では、SSM Parameter Store に登録済みパラメータの最新バージョンにラベルを付与する。
+  services:
+    - SSM/Parameter Store
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - パラメータ /myapp/training/db/host が作成済みであること（0201 / 0203 のいずれかが完了済み）。
+  after:
+    - パラメータ /myapp/training/db/host の最新バージョンに、指定ラベルが付与されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象パラメータの存在確認"
+      description: |
+        指定パラメータが既に作成されていることを確認する。
+      snippet: snippets/ssm/describe-parameter.md
+
+  main:
+    snippet: snippets/ssm/label-parameter-version.md
+
+  post_checks:
+    - title: "ラベル付与の確認"
+      description: |
+        パラメータの最新バージョンに、指定ラベルが付与されていることを確認する。
+      snippet: snippets/ssm/get-parameter-history.md
+
+  params_files:
+    - ../params/training-ssm.yaml
+
+  params:
+    parameter_name: /myapp/training/db/host
+    parameter_type: String
+    # parameter_value はラベル付与には不要だが、get-parameter-history の例示出力で
+    # 利用するため指定する（0203 で設定された値を引き継ぐ前提）。
+    parameter_value: db.example.internal
+    parameter_description: "Training environment DB host (updated for internal access)"
+    parameter_labels:
+      - production-2026-q2
