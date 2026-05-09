@@ -158,11 +158,6 @@ aws ec2 describe-vpcs \
 ```
 
 
-#### 3.99 中間リソースの削除
-
-今回は特になし
-
-
 #### Navigation
 
 Next: [VPC属性を設定する](./0102-modify-dns-hostname.md)
