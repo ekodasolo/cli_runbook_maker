@@ -1,0 +1,8 @@
+# SSM パラメータ作成系手順書の共通パラメータ
+#
+# VPC 系の training-common.yaml とは別ファイルにする。1.1 の
+# パラメータ表に runbook 実態と関係ない値（vpc_cidr 等）が出るのを
+# 避けるため。
+params:
+  region: ap-northeast-1
+  parameter_namespace: /myapp/training/

@@ -1,0 +1,46 @@
+runbook:
+  id: "0202"
+  title: "SSM パラメータ /myapp/training/db/port を作成する"
+  about: |
+    SSM パラメータ作成のCLI手順書。
+
+    本手順では、SSM Parameter Store にトレーニング用 DB ポート番号のパラメータを登録する。
+  services:
+    - SSM/Parameter Store
+  duration: "3 Min"
+  operation: CREATE
+
+  before:
+    - 同名のパラメータがまだ作成されていないこと。
+  after:
+    - パラメータ /myapp/training/db/port が作成されていること。
+    - 値が指定どおりに設定されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "既存パラメータの非存在確認"
+      description: |
+        指定パラメータがまだ作成されていないことを確認する。
+      snippet: snippets/ssm/describe-parameter.md
+
+  main:
+    snippet: snippets/ssm/put-parameter.md
+
+  post_checks:
+    - title: "作成パラメータの値確認"
+      description: |
+        パラメータが作成され、値が指定どおりに設定されていることを確認する。
+      snippet: snippets/ssm/get-parameter.md
+
+  params_files:
+    - ../params/training-ssm.yaml
+
+  params:
+    parameter_name: /myapp/training/db/port
+    parameter_type: String
+    parameter_value: "5432"
+    parameter_description: "Training environment DB port"
+
+  # 0202 はシーケンスの末尾。navigation.next を持たない場合、
+  # Navigation セクションごと出力されない。

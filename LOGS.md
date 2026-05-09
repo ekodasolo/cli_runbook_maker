@@ -1,5 +1,29 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: SSM パラメータ対応（フェーズ2）
+
+### 実施内容
+- SSM Parameter Store 用のスニペット3件を新設：`describe-parameter.md`、`put-parameter.md`、`get-parameter.md`
+- サンプル runbook 2件を作成：`0201-create-ssm-parameter-db-host.yaml`、`0202-create-ssm-parameter-db-port.yaml`
+- SSM 用共通パラメータファイル `examples/params/training-ssm.yaml` を新設（VPC 系の `training-common.yaml` とは別ファイル）
+- `templates/runbook.md.j2` の Navigation セクションを `navigation.next` がある場合のみ出力するように改善
+- SPEC §8 に SSM 系スニペットの一覧を追加。アトミック原則と「1 runbook = 1 リソース」方針を明記
+- TASKS.md フェーズ2 を完了状態に更新
+
+### 決定事項
+- **スニペットはアトミックに保つ**（1 スニペット = 1 AWS CLI コマンド）。複数パラメータの作成は「1 パラメータ = 1 runbook」のスタイルで分割し、ループ展開機構は導入しない。理由：
+  - スニペットの独立性が保てる（再利用しやすい）
+  - 各 runbook が end-to-end 自己完結（pre/main/post が1リソースに対応）
+  - 失敗時の隔離（パラメータ5番目で失敗しても、6番以降に波及しない）
+  - YAML 量産のコストは許容範囲（1ファイル30行程度）
+- **VPC 系と SSM 系の `params_files` は分離する**。1.1 のパラメータ表に runbook 実態と関係ない値（VPC runbook で SSM 値が出るなど）が出ないようにする。SPEC §5.2 の「業務単位・環境単位で分割してよい」方針と整合
+- **VPC 系（0101, 0102）と SSM 系（0201, 0202）は独立シーケンス**。SPEC のオペレーション分類として VPC ネットワーク構築と SSM パラメータ設定は別の作業フローのため
+- **Navigation セクションは `navigation.next` がある場合のみ出力**。シーケンス末尾の runbook（例：0202）で空の `#### Navigation` ヘッダだけが残るのを防ぐ
+
+### 設計検証
+今回のフェーズで「即値原則 + 汎用テンプレート + アトミックスニペット + 1 runbook 1 リソース」の組み合わせが SSM のような異種リソースで機能することを確認。フェーズ3（S3 / KMS / CloudFormation）も同パターンで対応可能と判断
+
+
 ## 2026-05-09: post_check の title/description 対応（フェーズ1.8）
 
 ### 実施内容

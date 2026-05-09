@@ -72,10 +72,10 @@
 {% endif %}
 {% endfor %}
 
+{% if navigation.next %}
 #### Navigation
 
-{% if navigation.next %}
 Next: [{{ navigation.next.title }}]({{ navigation.next.link }})
-{% endif %}
 
+{% endif %}
 # EOD
