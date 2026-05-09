@@ -1,5 +1,20 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: post_check の title/description 対応（フェーズ1.8）
+
+### 実施内容
+- `templates/runbook.md.j2` の section 3 を pre_checks 風のループに書き換え。各 post_check が `#### 3.1 [title]` → description → snippet の順に展開されるようにした
+- `examples/runbooks/0101-create-vpc.yaml` / `0102-modify-dns-hostname.yaml` の post_checks に title / description を追加
+- SPEC §4.1（YAML サンプル）と §9（生成構造図）を更新
+- フェーズ1.5 残課題3件のうち最後の1件を解消し、フェーズ1.5 全体が閉じた
+
+### 決定事項
+- **post_checks は pre_checks と対称な構造にする**。section 番号は 3.1, 3.2, ... と昇格させ、`#### 3.1 [post_check.title]` の形で展開する。サブ番号 `3.1.1` 案より読みやすく、authoring 時の認知負荷も下がる
+- **`title` は必須、`description` は任意**。section 見出しに使うため title は必須が自然。短い post_check では title だけで意図が伝わるため description は任意
+- **section 3 冒頭で `After` 条件を再掲する旧仕様は廃止**。When > After 章に既に書かれており、各 post_check の description で必要に応じて参照すれば十分。重複を減らすことを優先
+- **post_checks が空のときは `### 3. 後処理` ヘッダだけが残る**。空の section は authoring 時に「post_check を入れるべき」と気づきやすい指針として機能する。条件付き非表示にはしない
+
+
 ## 2026-05-09: 3.99 中間リソース削除セクションの撤廃（フェーズ1.7）
 
 ### 実施内容

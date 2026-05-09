@@ -148,9 +148,9 @@ aws ec2 modify-vpc-attribute \
 
 ### 3. 後処理
 
-#### 3.1 完了条件の結果確認
+#### 3.1 VPC属性の変更確認
 
-VPCのDNS hostnamesが、Enabledになっている。
+DNS Hostname 属性が Enabled に変わっていることを確認する（完了条件1に対応）。
 
 VPCの属性値を確認する。
 

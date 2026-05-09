@@ -57,7 +57,28 @@
 ### 残課題（次のタスクで扱う）
 - [×] ~~監査ログ用パラメータプレビューブロックの再設計~~ — **不要として閉鎖**。即値レンダリング方針（フェーズ1.6）の下では runbook 自身が記録になるため監査ログは冗長
 - [×] ~~`runbook.cleanup` フィールドの導入~~ — **不要として閉鎖**（フェーズ1.7）。実運用で「中間リソースの削除」が必要なケースはまず出てこないため、3.99 セクションごと撤廃
-- [ ] 複数 post_check に title/description を持たせる UI（現状は snippet のみ）
+- [✓] 複数 post_check に title/description を持たせる UI — フェーズ1.8 で対応済み
+
+---
+
+## フェーズ1.8: post_check の title/description 対応 — 完了
+
+実運用で複数の post_check が必要なケースがあるという判断に基づき、各 post_check に title（必須）と description（任意）を持たせ、pre_check と対称的に 3.1, 3.2, ... と番号付きセクションで展開できるようにした。
+
+### 設計
+- [✓] post_checks は pre_checks と対称的に section 番号 3.1, 3.2, ... で展開
+- [✓] title 必須、description 任意（snippet も任意。ただし最低1要素は欲しい運用）
+- [✓] section 3 冒頭で `After` 条件を再掲する旧仕様は廃止（When 章にすでにあり、各 post_check の description でカバー可能）
+- [✓] post_checks が空のときは `### 3. 後処理` ヘッダだけが残る（authoring 時の指針）
+
+### 実装
+- [✓] `templates/runbook.md.j2` の section 3 を pre_checks 風のループに書き換え
+- [✓] `examples/runbooks/0101-create-vpc.yaml` / `0102-modify-dns-hostname.yaml` の post_checks に title/description を追加
+- [✓] SPEC §4.1（post_checks サンプル）、§9（構造図の 3.X 表記）を更新
+
+### 検証
+- [✓] 0101 / 0102 を再生成し、section 3 が `#### 3.1 [title]` から始まり、description → snippet の順に展開されることを確認
+- [✓] 連続生成で MD5 一致（冪等性）
 
 ---
 
