@@ -1,4 +1,4 @@
-指定パラメータがまだ存在していないか確認する。
+指定名のパラメータの状態を確認する。
 
 ```bash
 aws ssm describe-parameters \
@@ -6,9 +6,25 @@ aws ssm describe-parameters \
     --region {{ region }}
 ```
 
-`Parameters` が空配列なら、まだ作成されていない（期待通り）。
+パラメータが存在する場合の結果例:
+```output
+{
+    "Parameters": [
+        {
+            "Name": "{{ parameter_name }}",
+            "Type": "{{ parameter_type }}",
+            "LastModifiedDate": "2026-05-09T10:23:45.000000+09:00",
+            "LastModifiedUser": "arn:aws:iam::010905949244:user/admin",
+            "Version": 1,
+            "Tier": "Standard",
+            "Policies": [],
+            "DataType": "text"
+        }
+    ]
+}
+```
 
-結果の例
+パラメータが存在しない場合の結果例:
 ```output
 {
     "Parameters": []

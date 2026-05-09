@@ -1,5 +1,27 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: SSM 追加テスト — UPDATE と LABEL（フェーズ2.1）
+
+### 実施内容
+- フェーズ2 の設計（汎用テンプレート + アトミックスニペット + 即値原則）が CREATE 以外の SSM 操作にも通用するかの検証として、UPDATE と LABEL の2 runbook を追加
+- 新スニペット3件：`put-parameter-overwrite.md`（`--overwrite` 付き）、`label-parameter-version.md`、`get-parameter-history.md`
+- 既存スニペット `describe-parameter.md` を中立化（「存在/非存在の両ケースを例示」）し、create 系（0201/0202）と update/label 系（0203/0204）の両方で再利用できるようにした
+- 新 runbook 2件：`0203-update-ssm-parameter-db-host.yaml`、`0204-label-ssm-parameter-db-host.yaml`
+- Navigation を 0201 → 0202 → 0203 → 0204 の線形シーケンスで連結（0202 の navigation.next を 0203 に追加）
+- SPEC §8 に新スニペット情報を反映、describe-parameter の役割記述を中立に書き直し
+
+### 決定事項
+- **`describe-parameter.md` は中立形式で1件に集約する**。最初は「不存在を期待」の narrative だったが、update/label でも同じ AWS CLI コマンドで「存在を期待」する場面があるため、両ケースの結果例を併記する形に書き直し。runbook の pre_check description で「どちらを期待するか」を案内する。これでアトミック原則（1 スニペット = 1 AWS CLI コマンド）を保ったまま、複数のユースケースで再利用できる
+- **`put-parameter` と `put-parameter-overwrite` は別スニペットに分離**。`--overwrite` フラグの有無で挙動（既存があった場合に上書きするか失敗するか）が変わるため、混在させずに別ファイルにする。スニペット名で意図が明確になり、誤用のリスクも下がる
+- **`get-parameter-history.md` の例示出力は2バージョン分を表示**。UPDATE → LABEL の操作後の状態（Version 2 が新値+ラベル、Version 1 が旧値+ラベル無し）を示すことで、操作が成功したときの履歴の見え方を明示する
+- **`parameter_value` を 0204（ラベル付与）にも残す**。ラベル付与には value は不要だが、`get-parameter-history.md` の例示出力で値表示に使うため。runbook YAML にコメントで「例示出力用」と明記
+
+### 設計検証
+- UPDATE / LABEL という CREATE と異なる操作種別でも、汎用テンプレートと既存スキーマで違和感なく対応できた
+- アトミックスニペットの方針（1 スニペット = 1 AWS CLI コマンド）が、操作種別の違い（put + --overwrite、label-parameter-version、get-parameter-history）でも筋を通せる
+- 既存の CREATE 系（0201/0202）の生成物は describe-parameter.md の中立化に伴い変化するが、意図通り（pre_check description が両 narrative を案内する形に整合）
+
+
 ## 2026-05-09: SSM パラメータ対応（フェーズ2）
 
 ### 実施内容
