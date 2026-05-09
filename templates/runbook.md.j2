@@ -59,13 +59,13 @@
 
 ### 3. 後処理
 
-#### 3.1 完了条件の結果確認
-
-{% for condition in runbook.after %}
-{{ condition }}
-
-{% endfor %}
 {% for check in runbook.post_checks or [] %}
+#### 3.{{ loop.index }} {{ check.title }}
+
+{% if check.description %}
+{{ check.description | trim }}
+
+{% endif %}
 {% if check.snippet %}
 {% include check.snippet %}
 

@@ -32,7 +32,10 @@ runbook:
     snippet: snippets/ec2/modify-vpc-attribute.md
 
   post_checks:
-    - snippet: snippets/ec2/describe-vpc-attribute.md
+    - title: "VPC属性の変更確認"
+      description: |
+        DNS Hostname 属性が Enabled に変わっていることを確認する（完了条件1に対応）。
+      snippet: snippets/ec2/describe-vpc-attribute.md
 
   params_files:
     - ../params/training-common.yaml
