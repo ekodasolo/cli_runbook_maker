@@ -1,0 +1,52 @@
+runbook:
+  id: "0305"
+  title: "S3 バケットにライフサイクルルールを設定する"
+  about: |
+    S3 バケットにライフサイクルルールを設定する CLI 手順書。
+
+    本手順では、指定した日数が経過したオブジェクトを自動的に期限切れ（Expire）にする
+    ライフサイクルルールを設定する。
+  services:
+    - S3
+  duration: "5 Min"
+  operation: MODIFY
+
+  before:
+    - バケット project-dev-training-bucket が作成済みであること。
+    - バージョニングが有効であること（0302 が完了済み）。
+  after:
+    - ライフサイクルルールが設定されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象バケットの存在確認"
+      description: |
+        操作対象のバケットが存在することを確認する。出力なしで正常終了すれば期待通り。
+      snippet: snippets/s3/head-bucket.md
+    - title: "現在のライフサイクル設定の確認"
+      description: |
+        ライフサイクルの現在の設定を確認する。未設定であれば NoSuchLifecycleConfiguration エラーが返る。
+      snippet: snippets/s3/get-bucket-lifecycle-configuration.md
+
+  main:
+    snippet: snippets/s3/put-bucket-lifecycle-configuration.md
+
+  post_checks:
+    - title: "ライフサイクル設定の確認"
+      description: |
+        ライフサイクルルールが設定されていることを確認する。
+      snippet: snippets/s3/get-bucket-lifecycle-configuration.md
+
+  params_files:
+    - ../params/training-s3.yaml
+
+  params:
+    lifecycle_rule_id: expire-objects
+    lifecycle_prefix: ""
+    lifecycle_expiration_days: "90"
+
+  navigation:
+    next:
+      title: "S3 バケットにバケットポリシーを設定する"
+      link: "./0306-configure-s3-bucket-policy.md"

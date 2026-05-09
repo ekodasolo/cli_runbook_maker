@@ -1,0 +1,48 @@
+runbook:
+  id: "0301"
+  title: "S3 バケットを作成する"
+  about: |
+    S3 バケット作成の CLI 手順書。
+
+    本手順では、トレーニング用の S3 バケットを東京リージョンに作成する。
+  services:
+    - S3
+  duration: "3 Min"
+  operation: CREATE
+
+  before:
+    - 同名のバケットがまだ作成されていないこと。
+    - アカウントのバケット数が上限に達していないこと。
+  after:
+    - バケット project-dev-training-bucket が作成されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "バケット数の確認"
+      description: |
+        アカウント内の既存バケット数を確認する。
+      snippet: snippets/s3/list-buckets.md
+    - title: "同名バケットの非存在確認"
+      description: |
+        作成対象のバケットがまだ存在しないことを確認する。404 エラーが返れば期待通り。
+      snippet: snippets/s3/head-bucket.md
+
+  main:
+    snippet: snippets/s3/create-bucket.md
+
+  post_checks:
+    - title: "バケットの作成確認"
+      description: |
+        バケットが正常に作成され、アクセス可能であることを確認する。出力なしで正常終了すれば期待通り。
+      snippet: snippets/s3/head-bucket.md
+
+  params_files:
+    - ../params/training-s3.yaml
+
+  params: {}
+
+  navigation:
+    next:
+      title: "S3 バケットのバージョニングを有効にする"
+      link: "./0302-enable-s3-versioning.md"

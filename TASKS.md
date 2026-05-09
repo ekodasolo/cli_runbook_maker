@@ -270,9 +270,46 @@ vars:
 
 ---
 
-## フェーズ3: 追加操作タイプ（予定）
+## フェーズ3: S3 対応 — 完了
 
-- [ ] S3: バケット作成、バージョニング設定、デフォルト暗号化(SSE-S3)、デフォルト暗号化(SSE-KMS)、ライフサイクル設定、バケットポリシー設定
+汎用テンプレート（`runbook.md.j2`）をそのまま使い、S3 用スニペット追加と runbook YAML 作成のみで実現。複雑な JSON ドキュメント（ライフサイクル設定、バケットポリシー）には `file://` パターン（§6.7）を導入。
+
+### 設計
+- [✓] `file://` パターンの導入（JSON ドキュメントをヒアドキュメントで一時ファイルに書き出し、`file://` で参照）
+- [✓] SSE-S3 / SSE-KMS を別スニペットに分離（同一 CLI コマンドだが JSON ペイロードが異なるため）
+- [✓] `head-bucket.md` を中立形式に（SSM の `describe-parameter.md` と同様、存在/非存在の両方を例示）
+- [✓] テンプレート、`generate.py` への変更なし
+
+### 実装
+- [✓] スニペット12件新設（`snippets/s3/`）:
+  - `list-buckets.md` / `head-bucket.md` / `create-bucket.md`
+  - `get-bucket-versioning.md` / `put-bucket-versioning.md`
+  - `get-bucket-encryption.md` / `put-bucket-encryption-sse-s3.md` / `put-bucket-encryption-sse-kms.md`
+  - `get-bucket-lifecycle-configuration.md` / `put-bucket-lifecycle-configuration.md`（`file://` パターン）
+  - `get-bucket-policy.md` / `put-bucket-policy.md`（`file://` パターン）
+- [✓] `examples/params/training-s3.yaml` 新設
+- [✓] ランブック6件新設:
+  - `0301-create-s3-bucket.yaml` (CREATE)
+  - `0302-enable-s3-versioning.yaml` (MODIFY)
+  - `0303-configure-s3-encryption-sse-s3.yaml` (MODIFY)
+  - `0304-configure-s3-encryption-sse-kms.yaml` (MODIFY)
+  - `0305-configure-s3-lifecycle.yaml` (MODIFY, `file://` パターン)
+  - `0306-configure-s3-bucket-policy.yaml` (MODIFY, `file://` パターン)
+- [✓] Navigation 連鎖: 0301 → 0302 → 0303 → 0304 → 0305 → 0306
+- [✓] SPEC §6.7 に `file://` パターンの節を追加、§8 に S3 スニペット一覧を追加
+
+### 検証
+- [✓] 全 12 runbook（0101-0306）の生成成功
+- [✓] `file://` パターン（0305, 0306）でヒアドキュメント + CLI コマンドの2ステップ構成が正常出力
+- [✓] インラインパターン（0303, 0304）で JSON がコマンドに正常埋込
+- [✓] Navigation 連鎖（0301→0302→0303→0304→0305→0306）と末尾 0306 で Navigation セクション無し
+- [✓] 連続生成で MD5 一致（冪等性）
+- [✓] 既存ランブック（0101-0204）への影響なし
+
+---
+
+## フェーズ3+: 追加操作タイプ（予定）
+
 - [ ] KMS: キー作成、エイリアス設定、キーポリシー設定
 - [ ] CloudFormation: スタック作成、変更セット作成、変更セット実行、スタック削除
 - [ ] DynamoDB: テーブル作成、GSI作成、TTL設定

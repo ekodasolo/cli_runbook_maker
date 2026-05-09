@@ -1,0 +1,54 @@
+runbook:
+  id: "0304"
+  title: "S3 バケットにデフォルト暗号化 (SSE-KMS) を設定する"
+  about: |
+    S3 バケットのデフォルト暗号化を SSE-KMS に設定する CLI 手順書。
+
+    本手順では、バケットに保存されるオブジェクトのデフォルト暗号化方式を
+    KMS マネージドキー (SSE-KMS) に変更する。S3 Bucket Key を有効にし、
+    KMS への API コールを削減する。
+  services:
+    - S3
+    - KMS
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - バケット project-dev-training-bucket が作成済みであること。
+    - 使用する KMS キーが作成済みであること。
+  after:
+    - バケットのデフォルト暗号化が SSE-KMS に設定されていること。
+    - BucketKeyEnabled が true になっていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象バケットの存在確認"
+      description: |
+        操作対象のバケットが存在することを確認する。出力なしで正常終了すれば期待通り。
+      snippet: snippets/s3/head-bucket.md
+    - title: "現在の暗号化設定の確認"
+      description: |
+        デフォルト暗号化の現在の設定を確認する。
+      snippet: snippets/s3/get-bucket-encryption.md
+
+  main:
+    snippet: snippets/s3/put-bucket-encryption-sse-kms.md
+
+  post_checks:
+    - title: "暗号化設定の確認"
+      description: |
+        SSEAlgorithm が aws:kms、KMSMasterKeyID が指定のキー ARN、
+        BucketKeyEnabled が true になっていることを確認する。
+      snippet: snippets/s3/get-bucket-encryption.md
+
+  params_files:
+    - ../params/training-s3.yaml
+
+  params:
+    kms_key_id: "arn:aws:kms:ap-northeast-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+
+  navigation:
+    next:
+      title: "S3 バケットにライフサイクルルールを設定する"
+      link: "./0305-configure-s3-lifecycle.md"
