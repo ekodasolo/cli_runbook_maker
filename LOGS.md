@@ -1,5 +1,33 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: ドキュメント矛盾の修正
+
+### 実施内容
+- CLAUDE.md のタスク管理ファイル名を実体に合わせて `TODOS.md` → `TASKS.md` に修正
+- CLAUDE.md に LOGS.md の運用ルールを追記
+- Jinjaテンプレートの拡張子を SPEC.md の規定どおり `.j2.txt` → `.j2` に揃えた
+
+### 決定事項
+- 作業ログの構成は「日付見出し → 実施内容 → 決定事項」で統一する
+
+
+## 2026-05-09: 生成ツール (generate.py) の基本実装
+
+### 実施内容
+- `generate.py` を実装。シナリオYAMLを起点に手順書MDとシナリオサマリーMDを生成する
+- シナリオMD用テンプレート `templates/scenario.md.j2` を新設
+- 依存関係を `requirements.txt`（PyYAML, Jinja2）に固定。`.tool-versions` で Python 3.13.12 を固定
+- VPC作成シナリオで動作確認：`examples/scenarios/0100-create-vpc.md` ほか2件の手順書MDを生成
+
+### 決定事項
+- テンプレート/スニペット解決は Jinja2 `FileSystemLoader([project_root, toolkit_root])` で実現。プロジェクト側を先に登録することで SPEC §3.3 のオーバーライド優先順位を自然に表現
+- スニペットの include はテンプレートからの相対パス（`snippets/ec2/create-vpc.md`）で参照する。Loader の検索パス設計と整合
+- パラメータ解決の context は `{ runbook, scenario, navigation, **merged_params }` の構造とし、テンプレートからは `{{ region }}` のように params をフラットに参照できるようにした
+- `trim_blocks=True, lstrip_blocks=True` を採用。インラインの `{% endif %}` が行末に来ると直後の改行を消費する挙動が判明したため、シナリオテンプレートでは `{% set %}` で変数化して回避
+- 生成物 `.md` は SPEC §3.4 に従い git にコミットする
+- テンプレート側の既知課題（`vpc_id` 未定義、日本語タイトルからの `RUNBOOK_TITLE` 生成）は generate.py の責務外として TASKS.md に切り出した
+
+
 ## 2025-02-26: サンプルYAML作成
 
 ### 実施内容
