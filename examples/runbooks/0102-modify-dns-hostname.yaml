@@ -1,0 +1,27 @@
+runbook:
+  id: "0102"
+  title: "VPC属性を設定する"
+  about: |
+    VPCを作成するCLI手順書。
+
+    本手順では、VPCの属性値を変更し、DNS Hostnameを有効にする。
+  services:
+    - EC2/VPC
+  duration: "5 Min"
+
+  before:
+    - VPCが作成済みである。
+    - VPCの属性値DNS hostnameがDisabledになっている。
+  after:
+    - VPCのDNS hostnamesが、Enabledになっている。
+
+  template: ec2-modify-vpc-attribute
+
+  params:
+    attribute: enableDnsHostnames
+    cli_option: enable-dns-hostnames
+    value: true
+
+  navigation:
+    next_title: "Subnetを作成する"
+    next_link: "./0200-CreateSubnet-Scenario.md"

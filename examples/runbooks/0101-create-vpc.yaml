@@ -1,0 +1,26 @@
+runbook:
+  id: "0101"
+  title: "VPCを作成する"
+  about: |
+    VPCを作成するCLI手順書。
+
+    本手順では、VPCを東京リージョンに作成する。
+  services:
+    - EC2/VPC
+  duration: "5 Min"
+
+  before:
+    - 作業リージョンでVPCの作成数上限に達しておらずVPCが作成可能である。
+    - 割り当てたIPアドレス範囲が他の既存のVPCと重複しておらず、作成可能である。
+  after:
+    - VPCが作成されている。
+    - 作成したVPCは東京リージョンに配置されている。
+
+  template: ec2-create-vpc
+
+  # この手順書固有のパラメータ（任意）
+  params: {}
+
+  navigation:
+    next_title: "VPC属性を設定する"
+    next_link: "./0102-modify-dns-hostname.md"
