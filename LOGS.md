@@ -1,5 +1,26 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: S3 バケット操作対応（フェーズ3）
+
+### 実施内容
+- S3 用スニペット12件を `snippets/s3/` に新設
+  - 従来パターン（インライン）: `list-buckets.md`、`head-bucket.md`、`create-bucket.md`、`get-bucket-versioning.md`、`put-bucket-versioning.md`、`get-bucket-encryption.md`、`put-bucket-encryption-sse-s3.md`、`put-bucket-encryption-sse-kms.md`、`get-bucket-lifecycle-configuration.md`、`get-bucket-policy.md`
+  - `file://` パターン: `put-bucket-lifecycle-configuration.md`、`put-bucket-policy.md`
+- サンプル runbook 6件を作成: `0301-create-s3-bucket.yaml`（CREATE）、`0302-enable-s3-versioning.yaml`〜`0306-configure-s3-bucket-policy.yaml`（MODIFY x5）
+- S3 用共通パラメータファイル `examples/params/training-s3.yaml` を新設
+- Navigation 連鎖: 0301 → 0302 → 0303 → 0304 → 0305 → 0306
+- SPEC §6.7 に `file://` パターンの節を新設、§8 に S3 スニペット一覧を追加
+
+### 決定事項
+- **`file://` パターンの導入**。CLI オプションに渡す JSON ドキュメントが大きく構造が可変な場合（ライフサイクル設定、バケットポリシー等）は、ヒアドキュメントで一時ファイルを作成し `file://` で参照する。JSON の可読性と CLI コマンドの簡潔性を両立する。§6.5 の例外規定に該当し、1スニペット内に「ファイル作成 + jq チェック + CLI 実行」の3ステップをまとめる
+- **`file://` パターンでは `jq` によるフォーマットチェックを必須とする**。ヒアドキュメントの記述ミスや Jinja2 展開後の JSON 構文エラーを、CLI 実行前に検出するため。3ステップ構成: (1) `cat << 'EOF' > /tmp/xxx.json` (2) `jq . /tmp/xxx.json` (3) `aws s3api ... file:///tmp/xxx.json`
+- **SSE-S3 / SSE-KMS は別スニペットに分離**。同一 CLI コマンド（`put-bucket-encryption`）だが JSON ペイロードの構造が異なるため、アトミック原則に則り別ファイルとする。`put-parameter.md` と `put-parameter-overwrite.md` の前例と同様
+- **`head-bucket.md` は中立形式**。SSM の `describe-parameter.md` と同様、存在/非存在の両方の出力例を示し、create の pre_check にも modify の pre_check にも使い回す
+- **インラインと `file://` の使い分け基準**: JSON なしまたは小さく固定構造ならインライン、大きくまたは構造が可変なら `file://`。SPEC §6.7 に基準表を明記
+- **バケットポリシーは複合ポリシー（4 Statement）を採用**: (1) 非TLS拒否 (2) 指定KMSキー以外拒否 (3) 指定VPCエンドポイント以外拒否 (4) 指定IAMロール以外のGet拒否。`file://` パターンの価値（JSON の可読性）を活かす実践的な例として機能する
+- **テンプレート・ジェネレータへの変更なし**。フェーズ2 と同様、スニペットと runbook YAML の追加だけで新サービスに対応できた。汎用テンプレート設計の妥当性が S3 でも確認された
+
+
 ## 2026-05-09: バリデーション機構の方針決定（将来タスク）
 
 ### 実施内容

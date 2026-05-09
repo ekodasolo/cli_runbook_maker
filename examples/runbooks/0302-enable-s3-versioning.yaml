@@ -1,0 +1,48 @@
+runbook:
+  id: "0302"
+  title: "S3 バケットのバージョニングを有効にする"
+  about: |
+    S3 バケットのバージョニング設定を有効にする CLI 手順書。
+
+    本手順では、バケットのバージョニングを有効化し、オブジェクトの世代管理を可能にする。
+  services:
+    - S3
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - バケット project-dev-training-bucket が作成済みであること（0301 が完了済み）。
+  after:
+    - バケットのバージョニングが Enabled になっていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象バケットの存在確認"
+      description: |
+        操作対象のバケットが存在することを確認する。出力なしで正常終了すれば期待通り。
+      snippet: snippets/s3/head-bucket.md
+    - title: "現在のバージョニング設定の確認"
+      description: |
+        バージョニングの現在の状態を確認する。
+      snippet: snippets/s3/get-bucket-versioning.md
+
+  main:
+    snippet: snippets/s3/put-bucket-versioning.md
+
+  post_checks:
+    - title: "バージョニング設定の確認"
+      description: |
+        バージョニングが Enabled になっていることを確認する。
+      snippet: snippets/s3/get-bucket-versioning.md
+
+  params_files:
+    - ../params/training-s3.yaml
+
+  params:
+    versioning_status: Enabled
+
+  navigation:
+    next:
+      title: "S3 バケットにデフォルト暗号化 (SSE-S3) を設定する"
+      link: "./0303-configure-s3-encryption-sse-s3.md"

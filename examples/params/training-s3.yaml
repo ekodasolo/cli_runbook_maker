@@ -1,0 +1,8 @@
+# S3 バケット操作系手順書の共通パラメータ
+#
+# VPC 系 (training-common.yaml)、SSM 系 (training-ssm.yaml) とは
+# 別ファイルにする。1.1 のパラメータ表に runbook 実態と関係ない値が
+# 出るのを避けるため。
+params:
+  region: ap-northeast-1
+  bucket_name: project-dev-training-bucket

@@ -1,0 +1,57 @@
+runbook:
+  id: "0306"
+  title: "S3 バケットにバケットポリシーを設定する"
+  about: |
+    S3 バケットにバケットポリシーを設定する CLI 手順書。
+
+    本手順では、以下の4つの制御を組み合わせたバケットポリシーを設定する。
+    1. TLS を使用しない Get/Put を拒否
+    2. 指定 KMS キー以外で暗号化された Put を拒否
+    3. 指定 VPC エンドポイント以外からの Get/Put を拒否
+    4. 指定 IAM ロール以外からの Get を拒否
+  services:
+    - S3
+  duration: "5 Min"
+  operation: MODIFY
+
+  before:
+    - バケット project-dev-training-bucket が作成済みであること。
+    - 使用する KMS キーが作成済みであること（0304 で設定したキー）。
+    - VPC エンドポイント (S3 Gateway) が作成済みであること。
+  after:
+    - バケットポリシーが設定されていること。
+    - 非 TLS 接続が拒否されること。
+    - 指定 KMS キー以外の暗号化が拒否されること。
+    - 指定 VPC エンドポイント以外からのアクセスが拒否されること。
+    - 指定 IAM ロール以外からの Get が拒否されること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象バケットの存在確認"
+      description: |
+        操作対象のバケットが存在することを確認する。出力なしで正常終了すれば期待通り。
+      snippet: snippets/s3/head-bucket.md
+    - title: "現在のバケットポリシーの確認"
+      description: |
+        バケットポリシーの現在の設定を確認する。未設定であれば NoSuchBucketPolicy エラーが返る。
+      snippet: snippets/s3/get-bucket-policy.md
+
+  main:
+    snippet: snippets/s3/put-bucket-policy.md
+
+  post_checks:
+    - title: "バケットポリシーの確認"
+      description: |
+        4つの Statement (DenyNonTLSAccess, DenyNonSpecifiedKMSEncryptedPut,
+        DenyNonVPCEndpointAccess, DenyNonAuthorizedRoleGet) が
+        すべて設定されていることを確認する。
+      snippet: snippets/s3/get-bucket-policy.md
+
+  params_files:
+    - ../params/training-s3.yaml
+
+  params:
+    kms_key_arn: "arn:aws:kms:ap-northeast-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+    vpc_endpoint_id: vpce-0123456789abcdef0
+    allowed_role_arn: "arn:aws:iam::123456789012:role/project-dev-s3-read-role"
