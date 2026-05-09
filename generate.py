@@ -49,17 +49,6 @@ def load_yaml(path: Path) -> dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
-def _shell_var(name: object) -> str:
-    """Jinja2 フィルタ: シェル変数参照を組み立てる。
-
-    例: ``{{ "AWS_REGION" | shell_var }}`` -> ``${AWS_REGION}``
-
-    ``templates/runbook.md.j2`` の §1.1（``cat << ETX`` で `shell_vars`
-    を確認するブロック）から使われる。
-    """
-    return "${" + str(name) + "}"
-
-
 def build_env() -> Environment:
     """Jinja2 環境を構築して返す。
 
@@ -74,17 +63,13 @@ def build_env() -> Environment:
       - ``keep_trailing_newline``:
         テンプレート・スニペットの末尾改行を保持する。生成 Markdown
         が ``\\n`` で終わるようにするため。
-      - ``shell_var`` フィルタ:
-        詳細は ``_shell_var`` を参照。
     """
-    env = Environment(
+    return Environment(
         loader=FileSystemLoader(str(ASSETS_ROOT)),
         keep_trailing_newline=True,
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    env.filters["shell_var"] = _shell_var
-    return env
 
 
 def load_params_files(runbook_yaml_path: Path, params_files: list[str]) -> dict[str, Any]:
@@ -147,8 +132,9 @@ def render_runbook(runbook_yaml_path: Path, env: Environment) -> Path:
          から解決する。
       4. Jinja2 のコンテキストを構築する。``params`` を dict として
          渡すと同時に、トップレベルにもフラットに展開する（前者は
-         テンプレートの ``shell_vars`` 経由の間接参照、後者はスニペット
-         からの直接参照に使われる。SPEC §6.6）。
+         テンプレートの 1.1 パラメータ表のループ展開に、後者は
+         スニペットからの直接参照（``{{ vpc_cidr }}`` 等）に使われる。
+         SPEC §6.6）。
       5. ``dist/runbooks/`` を必要に応じて作成し、生成物を書き込む。
 
     スキーマ違反は ``ValueError``、参照ファイル欠落は
@@ -190,12 +176,11 @@ def render_runbook(runbook_yaml_path: Path, env: Environment) -> Path:
         ) from e
 
     # --- 4. コンテキスト構築とレンダリング ---
-    # ``params`` を dict として渡す: テンプレート側で
-    # ``params[shell_var_key]`` のように ``runbook.shell_vars`` 由来の
-    # キーで間接参照するために必要。
-    # 同じ値をトップレベルにも展開する: スニペットの「結果の例」で
-    # ``{{ vpc_cidr }}`` のように直接参照して例示出力をリアル化するため。
-    # （SPEC §6.6 のスニペット内変数規約に対応）
+    # ``params`` を dict として渡す: 1.1 のパラメータ表生成で
+    # ``{% for k, v in params.items() %}`` のループに使う。
+    # 同じ値をトップレベルにも展開する: スニペット側で
+    # ``--cidr-block {{ vpc_cidr }}`` のように直接参照して即値展開する
+    # ため（SPEC §6.6 のスニペット内変数規約に対応）。
     context = {
         "runbook": runbook,
         "navigation": runbook.get("navigation") or {},

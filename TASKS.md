@@ -55,9 +55,34 @@
 - [✓] スニペット側の変数規約（コマンド = shell var、例示出力 = Jinja）が両 runbook で機能することを確認
 
 ### 残課題（次のタスクで扱う）
-- [ ] 監査ログ用パラメータプレビューブロックの再設計（必要なら）
+- [×] ~~監査ログ用パラメータプレビューブロックの再設計~~ — **不要として閉鎖**。即値レンダリング方針（フェーズ1.6）の下では runbook 自身が記録になるため監査ログは冗長
 - [ ] `runbook.cleanup` フィールドの導入（3.99 中間リソース削除を YAML から指定可能に）
 - [ ] 複数 post_check に title/description を持たせる UI（現状は snippet のみ）
+
+---
+
+## フェーズ1.6: 即値レンダリング方針への転換
+
+「runbook は生成されるものなので、コマンド内のパラメータ値は即値（リテラル）で書き出す」方針への転換。シェル変数で抽象化するのは実行時取得値（VPC_ID 等）に限定する。手書き時代の名残（FILE_PARAMETER 監査ログ、shell_vars 代入ブロック）を撤去し、画面に出ているコマンドが流したコマンドそのもの、という1対1対応を確立する。
+
+### 設計
+- [✓] スニペット規約：静的設定は Jinja2 即値、実行時取得値は `${VPC_ID}` 等のシェル変数（SPEC §6.6 で明文化）
+- [✓] パラメータ値の YAML 表記規約：JSON リテラルと一致する文字列で書く（`value: "true"`、`value: "30"` 等。SPEC §6.7）
+- [✓] 1.1 セクションをパラメータ表に統合。FILE_PARAMETER 設定 / shell_vars 代入 / `cat << ETX` 確認ブロックを撤去
+- [✓] runbook YAML スキーマから `shell_vars` / `slug` フィールドを撤去
+
+### 実装
+- [✓] `templates/runbook.md.j2` の 1.1 セクションをパラメータ表に置き換え
+- [✓] スニペット7件を即値ベースに書き換え（`create-vpc.md` / `describe-vpcs.md` / `modify-vpc-attribute.md` / `describe-vpc-attribute.md` / `list-vpcs.md` / `find-vpc-id-by-cidr.md` / `describe-vpc-dns-attributes.md`）
+- [✓] `examples/runbooks/0101-create-vpc.yaml` / `0102-modify-dns-hostname.yaml` から `shell_vars` / `slug` 撤去、`value: "true"` を文字列化
+- [✓] `generate.py` から不要になった `shell_var` フィルタ撤去、コメントを新仕様に合わせて修正
+- [✓] SPEC §4.1（YAML スキーマ）、§6.4（テンプレートの責務）、§6.6（変数規約）、§6.7（YAML 表記規約）、§9（生成構造）、§9.1（パラメータ表）を更新
+
+### 検証
+- [✓] 0101 / 0102 の生成物が即値で出力されることを確認（`--cidr-block 10.0.0.0/24`、`--region ap-northeast-1` 等）
+- [✓] 0102 の主処理コマンドで `${VPC_ID}` のみシェル変数、その他は即値で出力されることを確認
+- [✓] 1.1 のパラメータ表とコマンド本体の値が一致することを確認（`value: true` の表記不一致を修正済み）
+- [✓] 連続生成で MD5 一致（冪等性）
 
 ---
 

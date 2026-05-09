@@ -4,12 +4,14 @@ DNS関連のVPC属性値を確認する。
 # DNS Support
 aws ec2 describe-vpc-attribute \
     --vpc-id ${VPC_ID} \
-    --attribute enableDnsSupport
+    --attribute enableDnsSupport \
+    --region {{ region }}
 
 # DNS Hostname
 aws ec2 describe-vpc-attribute \
     --vpc-id ${VPC_ID} \
-    --attribute enableDnsHostnames
+    --attribute enableDnsHostnames \
+    --region {{ region }}
 ```
 
 結果の例

@@ -1,6 +1,6 @@
 ```bash
 # 既存のVPCを確認
-aws ec2 describe-vpcs --region ${AWS_REGION} --query "Vpcs[].[VpcId, CidrBlock]"
+aws ec2 describe-vpcs --region {{ region }} --query "Vpcs[].[VpcId, CidrBlock]"
 ```
 
 既存のVPCの数がすでに上限に達していなければ期待通り。

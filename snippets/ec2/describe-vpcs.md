@@ -2,8 +2,8 @@ VPCの一覧を確認する。
 
 ```bash
 aws ec2 describe-vpcs \
-    --filters "Name=cidr-block,Values=${VPC_CIDR}" \
-    --region ${AWS_REGION}
+    --filters "Name=cidr-block,Values={{ vpc_cidr }}" \
+    --region {{ region }}
 ```
 
 結果の例
