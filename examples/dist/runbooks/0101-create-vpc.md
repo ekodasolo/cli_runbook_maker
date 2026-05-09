@@ -54,8 +54,7 @@ cat << ETX
 ETX
 ```
 
-
-#### 1.2 事前条件1の確認
+#### 1.2 VPC作成数の上限の確認
 
 リージョン内に作成できるVPCの数は、特に上限緩和していなければ、リージョンあたり5個まで。現状で5個に達していないかを事前に確認する。
 
@@ -80,7 +79,7 @@ aws ec2 describe-vpcs --region ${AWS_REGION} --query "Vpcs[].[VpcId, CidrBlock]"
 ]
 ```
 
-#### 1.3 事前条件2の確認
+#### 1.3 依存リソースの確認
 
 依存するリソースが存在していることを確認。本作業では依存リソースは無い。
 
@@ -89,28 +88,13 @@ aws ec2 describe-vpcs --region ${AWS_REGION} --query "Vpcs[].[VpcId, CidrBlock]"
 
 #### 2.1 リソースの操作 (CREATE)
 
-パラメータの最終確認
-
-```bash
-cat << EOF > ${FILE_PARAMETER}
-aws ec2 create-vpc \
-    --cidr-block ${VPC_CIDR} \
-    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=${VPC_NAME} }]" \
-    --region ${AWS_REGION}
-        
-EOF
-cat ${FILE_PARAMETER}
-```
-
-処理の実行
-
 VPCを作成する。
 
 ```bash
 aws ec2 create-vpc \
-    --cidr-block 10.0.0.0/24 \
-    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=project-dev-main-vpc }]" \
-    --region ap-northeast-1
+    --cidr-block ${VPC_CIDR} \
+    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=${VPC_NAME} }]" \
+    --region ${AWS_REGION}
 ```
 
 結果の例
@@ -146,7 +130,7 @@ aws ec2 create-vpc \
 
 ### 3. 後処理
 
-#### 3.1 完了条件1、2の結果確認
+#### 3.1 完了条件の結果確認
 
 VPCが作成されている。
 
@@ -156,8 +140,8 @@ VPCの一覧を確認する。
 
 ```bash
 aws ec2 describe-vpcs \
-    --filters "Name=cidr-block,Values=10.0.0.0/24" \
-    --region ap-northeast-1
+    --filters "Name=cidr-block,Values=${VPC_CIDR}" \
+    --region ${AWS_REGION}
 ```
 
 結果の例

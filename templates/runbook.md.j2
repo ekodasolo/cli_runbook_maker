@@ -1,0 +1,101 @@
+# [{{ runbook.id }}] {{ runbook.title }}
+
+## About
+{{ runbook.about }}
+
+## When: 作業の条件
+
+### Before: 事前前提条件
+
+以下を作業の前提条件とする。
+{% for condition in runbook.before %}
+1. {{ condition }}
+{% endfor %}
+
+### After: 作業終了状況
+
+以下が完了の条件。
+{% for condition in runbook.after %}
+1. {{ condition }}
+{% endfor %}
+
+
+## How: 以下は作業手順
+
+### 1. 前処理
+
+#### 1.1 処理パラメータの準備
+
+パラメータの事後確認用ファイルの設定
+
+```bash
+RUNBOOK_TITLE="{{ runbook.id }}-{{ runbook.slug }}"
+DIR_PARAMETER="."
+FILE_PARAMETER="${DIR_PARAMETER}/$(date +%Y-%m-%d)-${RUNBOOK_TITLE}.env" \
+    && echo ${FILE_PARAMETER}
+```
+
+手順の実行パラメータ
+```bash
+# 変数に値をセット
+{% for shell_name, param_key in (runbook.shell_vars or {}).items() %}
+{{ shell_name }}="{{ params[param_key] }}"
+{% endfor %}
+```
+
+```bash
+# 値を確認
+cat << ETX
+{% for shell_name in (runbook.shell_vars or {}).keys() %}
+    {{ shell_name }}={{ shell_name | shell_var }}
+{% endfor %}
+
+ETX
+```
+
+{% for check in runbook.pre_checks or [] %}
+#### 1.{{ loop.index + 1 }} {{ check.title }}
+
+{% if check.description %}
+{{ check.description | trim }}
+
+{% endif %}
+{% if check.snippet %}
+{% include check.snippet %}
+
+{% endif %}
+{% endfor %}
+
+### 2. 主処理
+
+#### 2.1 リソースの操作 ({{ runbook.operation }})
+
+{% include runbook.main.snippet %}
+
+### 3. 後処理
+
+#### 3.1 完了条件の結果確認
+
+{% for condition in runbook.after %}
+{{ condition }}
+
+{% endfor %}
+{% for check in runbook.post_checks or [] %}
+{% if check.snippet %}
+{% include check.snippet %}
+
+{% endif %}
+{% endfor %}
+
+#### 3.99 中間リソースの削除
+
+{{ runbook.cleanup or "今回は特になし" }}
+
+
+#### Navigation
+
+{% if navigation.next %}
+Next: [{{ navigation.next.title }}]({{ navigation.next.link }})
+{% endif %}
+
+# EOD

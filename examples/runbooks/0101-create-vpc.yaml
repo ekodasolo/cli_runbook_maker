@@ -1,5 +1,6 @@
 runbook:
   id: "0101"
+  slug: "create-vpc"
   title: "VPCを作成する"
   about: |
     VPCを作成するCLI手順書。
@@ -8,6 +9,7 @@ runbook:
   services:
     - EC2/VPC
   duration: "5 Min"
+  operation: CREATE
 
   before:
     - 作業リージョンでVPCの作成数上限に達しておらずVPCが作成可能である。
@@ -16,15 +18,39 @@ runbook:
     - VPCが作成されている。
     - 作成したVPCは東京リージョンに配置されている。
 
-  template: ec2-create-vpc
+  template: runbook
+
+  # 1.1 で出力する shell 変数（順序保持、キー＝shell名／値＝params のキー）
+  shell_vars:
+    AWS_REGION: region
+    VPC_CIDR: vpc_cidr
+    VPC_NAME: vpc_name
+
+  # 1.2, 1.3, ... の事前確認
+  pre_checks:
+    - title: "VPC作成数の上限の確認"
+      description: |
+        リージョン内に作成できるVPCの数は、特に上限緩和していなければ、リージョンあたり5個まで。現状で5個に達していないかを事前に確認する。
+      snippet: snippets/ec2/list-vpcs.md
+    - title: "依存リソースの確認"
+      description: |
+        依存するリソースが存在していることを確認。本作業では依存リソースは無い。
+
+  # 2.1 主処理
+  main:
+    snippet: snippets/ec2/create-vpc.md
+
+  # 3.1 事後確認
+  post_checks:
+    - snippet: snippets/ec2/describe-vpcs.md
 
   # 共通パラメータファイル（runbook YAML からの相対パス）
   params_files:
     - ../params/training-common.yaml
 
-  # この手順書固有のパラメータ（params_files より優先）
   params: {}
 
   navigation:
-    next_title: "VPC属性を設定する"
-    next_link: "./0102-modify-dns-hostname.md"
+    next:
+      title: "VPC属性を設定する"
+      link: "./0102-modify-dns-hostname.md"

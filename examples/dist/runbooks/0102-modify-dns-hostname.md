@@ -1,7 +1,7 @@
 # [0102] VPC属性を設定する
 
 ## About
-VPCを作成するCLI手順書。
+VPC属性を変更するCLI手順書。
 
 本手順では、VPCの属性値を変更し、DNS Hostnameを有効にする。
 
@@ -29,7 +29,7 @@ VPCを作成するCLI手順書。
 パラメータの事後確認用ファイルの設定
 
 ```bash
-RUNBOOK_TITLE="0102-vpc属性を設定する"
+RUNBOOK_TITLE="0102-modify-dns-hostname"
 DIR_PARAMETER="."
 FILE_PARAMETER="${DIR_PARAMETER}/$(date +%Y-%m-%d)-${RUNBOOK_TITLE}.env" \
     && echo ${FILE_PARAMETER}
@@ -40,6 +40,9 @@ FILE_PARAMETER="${DIR_PARAMETER}/$(date +%Y-%m-%d)-${RUNBOOK_TITLE}.env" \
 # 変数に値をセット
 AWS_REGION="ap-northeast-1"
 VPC_CIDR="10.0.0.0/24"
+ATTRIBUTE="enableDnsHostnames"
+CLI_OPTION="enable-dns-hostnames"
+VALUE="true"
 ```
 
 ```bash
@@ -47,18 +50,20 @@ VPC_CIDR="10.0.0.0/24"
 cat << ETX
     AWS_REGION=${AWS_REGION}
     VPC_CIDR=${VPC_CIDR}
+    ATTRIBUTE=${ATTRIBUTE}
+    CLI_OPTION=${CLI_OPTION}
+    VALUE=${VALUE}
 
 ETX
 ```
 
+#### 1.2 VPCが作成済みであることの確認
 
-#### 1.2 事前条件1の確認
-
-VPCが作成済みか、事前に確認する。
+VPCが作成済みか、事前に確認する。作成済みの場合は VPC ID を取得しておく。
 
 ```bash
 # 既存のVPCを確認
-aws ec2 describe-vpcs --filters "Name=cidr,Values=${VPC_CIDR}"
+aws ec2 describe-vpcs --filters "Name=cidr,Values=${VPC_CIDR}" --region ${AWS_REGION}
 ```
 
 VPCが作成済みであれば、期待通り。
@@ -89,7 +94,7 @@ VPCが作成済みであれば、期待通り。
 }
 ```
 
-VPCが作成済みならば、VPC IDを取得しておく。
+VPCが作成済みならば、VPC IDをシェル変数として取得しておく（後続手順で使用する）。
 
 ```bash
 VPC_ID=$(aws ec2 describe-vpcs \
@@ -104,10 +109,11 @@ VPC_ID=$(aws ec2 describe-vpcs \
 vpc-0a60eb65b4EXAMPLE
 ```
 
+#### 1.3 VPC属性 (DNS Hostname) の現状確認
 
-#### 1.3 事前条件2の確認
+VPCのDNS関連属性の現状を確認する。DNS HostnameがDisabledであることを確認する。
 
-VPCの属性値DNS hostnameがDisabledになっている。
+DNS関連のVPC属性値を確認する。
 
 ```bash
 # DNS Support
@@ -139,30 +145,18 @@ aws ec2 describe-vpc-attribute \
 }
 ```
 
+
 ### 2. 主処理
 
 #### 2.1 リソースの操作 (MODIFY)
-
-パラメータの最終確認
-
-```bash
-cat << EOF > ${FILE_PARAMETER}
-aws ec2 modify-vpc-attribute \
-    --vpc-id ${VPC_ID} \
-    --enable-dns-hostnames "{\"Value\":true}"
-        
-EOF
-cat ${FILE_PARAMETER}
-```
-
-処理の実行
 
 VPCの属性値を変更する。
 
 ```bash
 aws ec2 modify-vpc-attribute \
-    --vpc-id  \
-    --enable-dns-hostnames "{\"Value\":true}"
+    --vpc-id ${VPC_ID} \
+    --${CLI_OPTION} "{\"Value\":${VALUE}}" \
+    --region ${AWS_REGION}
 ```
 
 結果の例
@@ -172,18 +166,20 @@ aws ec2 modify-vpc-attribute \
 
 ### 3. 後処理
 
-#### 3.1 完了条件1の結果確認
-1. VPCのDNS hostnamesが、Enabledになっている。
+#### 3.1 完了条件の結果確認
+
+VPCのDNS hostnamesが、Enabledになっている。
 
 VPCの属性値を確認する。
 
 ```bash
 aws ec2 describe-vpc-attribute \
-    --vpc-id  \
-    --attribute enableDnsHostnames
+    --vpc-id ${VPC_ID} \
+    --attribute ${ATTRIBUTE} \
+    --region ${AWS_REGION}
 ```
 
-結果の例（enableDnsHostnamesの場合）
+結果の例
 ```output
 {
     "VpcId": "vpc-0701707c27407b25d",
@@ -197,6 +193,7 @@ aws ec2 describe-vpc-attribute \
 #### 3.99 中間リソースの削除
 
 今回は特になし
+
 
 #### Navigation
 

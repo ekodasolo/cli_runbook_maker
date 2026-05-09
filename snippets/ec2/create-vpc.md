@@ -2,16 +2,16 @@ VPCを作成する。
 
 ```bash
 aws ec2 create-vpc \
-    --cidr-block {{ vpc_cidr }} \
-    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value={{ vpc_name }} }]" \
-    --region {{ region }}
+    --cidr-block ${VPC_CIDR} \
+    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=${VPC_NAME} }]" \
+    --region ${AWS_REGION}
 ```
 
 結果の例
 ```output
 {
     "Vpc": {
-        "CidrBlock": "10.0.0.0/24",
+        "CidrBlock": "{{ vpc_cidr }}",
         "DhcpOptionsId": "dopt-0ded636f18bc345d7",
         "State": "pending",
         "VpcId": "vpc-0701707c27407b25d",
@@ -21,7 +21,7 @@ aws ec2 create-vpc \
         "CidrBlockAssociationSet": [
             {
                 "AssociationId": "vpc-cidr-assoc-07a876b8ac3175c6a",
-                "CidrBlock": "10.0.0.0/24",
+                "CidrBlock": "{{ vpc_cidr }}",
                 "CidrBlockState": {
                     "State": "associated"
                 }
@@ -31,7 +31,7 @@ aws ec2 create-vpc \
         "Tags": [
             {
                 "Key": "Name",
-                "Value": "project-dev-main-vpc"
+                "Value": "{{ vpc_name }}"
             }
         ]
     }
