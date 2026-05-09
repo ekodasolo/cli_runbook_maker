@@ -25,34 +25,15 @@ VPCを作成するCLI手順書。
 
 ### 1. 前処理
 
-#### 1.1 処理パラメータの準備
+#### 1.1 処理パラメータ
 
-パラメータの事後確認用ファイルの設定
+本手順で使うパラメータ：
 
-```bash
-RUNBOOK_TITLE="0101-create-vpc"
-DIR_PARAMETER="."
-FILE_PARAMETER="${DIR_PARAMETER}/$(date +%Y-%m-%d)-${RUNBOOK_TITLE}.env" \
-    && echo ${FILE_PARAMETER}
-```
-
-手順の実行パラメータ
-```bash
-# 変数に値をセット
-AWS_REGION="ap-northeast-1"
-VPC_CIDR="10.0.0.0/24"
-VPC_NAME="project-dev-main-vpc"
-```
-
-```bash
-# 値を確認
-cat << ETX
-    AWS_REGION=${AWS_REGION}
-    VPC_CIDR=${VPC_CIDR}
-    VPC_NAME=${VPC_NAME}
-
-ETX
-```
+| キー | 値 |
+| --- | --- |
+| region | `ap-northeast-1` |
+| vpc_cidr | `10.0.0.0/24` |
+| vpc_name | `project-dev-main-vpc` |
 
 #### 1.2 VPC作成数の上限の確認
 
@@ -60,7 +41,7 @@ ETX
 
 ```bash
 # 既存のVPCを確認
-aws ec2 describe-vpcs --region ${AWS_REGION} --query "Vpcs[].[VpcId, CidrBlock]"
+aws ec2 describe-vpcs --region ap-northeast-1 --query "Vpcs[].[VpcId, CidrBlock]"
 ```
 
 既存のVPCの数がすでに上限に達していなければ期待通り。
@@ -92,9 +73,9 @@ VPCを作成する。
 
 ```bash
 aws ec2 create-vpc \
-    --cidr-block ${VPC_CIDR} \
-    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=${VPC_NAME} }]" \
-    --region ${AWS_REGION}
+    --cidr-block 10.0.0.0/24 \
+    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=project-dev-main-vpc }]" \
+    --region ap-northeast-1
 ```
 
 結果の例
@@ -140,8 +121,8 @@ VPCの一覧を確認する。
 
 ```bash
 aws ec2 describe-vpcs \
-    --filters "Name=cidr-block,Values=${VPC_CIDR}" \
-    --region ${AWS_REGION}
+    --filters "Name=cidr-block,Values=10.0.0.0/24" \
+    --region ap-northeast-1
 ```
 
 結果の例

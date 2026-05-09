@@ -1,6 +1,5 @@
 runbook:
   id: "0102"
-  slug: "modify-dns-hostname"
   title: "VPC属性を設定する"
   about: |
     VPC属性を変更するCLI手順書。
@@ -18,13 +17,6 @@ runbook:
     - VPCのDNS hostnamesが、Enabledになっている。
 
   template: runbook
-
-  shell_vars:
-    AWS_REGION: region
-    VPC_CIDR: vpc_cidr
-    ATTRIBUTE: attribute
-    CLI_OPTION: cli_option
-    VALUE: value
 
   pre_checks:
     - title: "VPCが作成済みであることの確認"
@@ -48,6 +40,9 @@ runbook:
   params:
     attribute: enableDnsHostnames
     cli_option: enable-dns-hostnames
+    # value は JSON リテラル（"true"/"false"/"30" 等）と一致する文字列で書く。
+    # YAML の bool/int をそのまま使うと Python の文字列化規則で
+    # "True" のように大文字になり、コマンドの値と一致しなくなる。
     value: "true"
 
   navigation:

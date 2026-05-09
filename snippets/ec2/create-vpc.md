@@ -2,9 +2,9 @@ VPCを作成する。
 
 ```bash
 aws ec2 create-vpc \
-    --cidr-block ${VPC_CIDR} \
-    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value=${VPC_NAME} }]" \
-    --region ${AWS_REGION}
+    --cidr-block {{ vpc_cidr }} \
+    --tag-specifications "ResourceType=vpc,Tags=[{ Key=Name,Value={{ vpc_name }} }]" \
+    --region {{ region }}
 ```
 
 結果の例
