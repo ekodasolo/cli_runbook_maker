@@ -1,0 +1,40 @@
+# [{{ scenario.id }}] {{ scenario.title }}
+
+## About
+
+{{ scenario.description }}
+{% if scenario.resources %}
+
+## 対象リソース
+
+{% for r in scenario.resources %}
+{% set note = '（' ~ r.note ~ '）' if r.note else '' %}
+- **{{ r.name }}** — {{ r.description }}{{ note }}
+{% endfor %}
+{% endif %}
+
+## Who: 前提スキル
+
+{% for w in scenario.who %}
+- {{ w }}
+{% endfor %}
+
+## Where: 作業環境
+
+{{ scenario.where }}
+{% if scenario.params %}
+
+## 共通パラメータ
+
+{% for k, v in scenario.params.items() %}
+- `{{ k }}`: `{{ v }}`
+{% endfor %}
+{% endif %}
+
+## Steps: 手順書一覧
+
+{% for step in steps %}
+{{ loop.index }}. [[{{ step.id }}] {{ step.title }}]({{ step.link }})
+{% endfor %}
+
+# EOD
