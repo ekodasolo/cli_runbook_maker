@@ -1,5 +1,34 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-09: テンプレート汎化（フェーズ1.5）
+
+### 実施内容
+- テンプレートが「操作タイプ × 特定リソース」で1対1に貼り付いていた状態を解消し、汎用テンプレート1個 + 役割中立スニペットの組合せに移行した
+- `templates/runbook.md.j2` を新設。CREATE/MODIFY/DELETE 共通の骨格を持ち、`pre_checks[]` / `main` / `post_checks[]` / `shell_vars` を runbook YAML 側から差し込む構造とした
+- runbook YAML スキーマを拡張：`slug`、`operation`、`shell_vars`、`pre_checks[]`、`main`、`post_checks[]` を追加
+- スニペット内の変数規約を確立しSPEC §6.6 に明文化：コマンド本体はシェル変数（`${VPC_CIDR}` 等）、例示出力は Jinja 変数（`{{ vpc_cidr }}` 等）
+- スニペットを書き換え／追加：
+  - 書き換え（コマンドをシェル変数化）：`create-vpc.md`、`describe-vpcs.md`、`modify-vpc-attribute.md`、`describe-vpc-attribute.md`
+  - 新設：`list-vpcs.md`（VPC 一覧サマリー）、`find-vpc-id-by-cidr.md`（VPC ID をシェル変数に取得）、`describe-vpc-dns-attributes.md`（DNS 属性確認）
+- `generate.py` に最小変更：`params` dict をコンテキストに追加（`shell_vars` の間接参照用）、`shell_var` フィルタを登録、`TOOLKIT_ROOT` を `ASSETS_ROOT` に改名、コメントを日本語で補強
+- 旧テンプレート `templates/ec2-create-vpc.md.j2` / `templates/ec2-modify-vpc-attribute.md.j2` を削除
+- `examples/runbooks/0101-create-vpc.yaml`、`examples/runbooks/0102-modify-dns-hostname.yaml` を新スキーマに移行
+- SPEC §4.1（YAML スキーマ）、§6.2（汎用テンプレート方針）、§6.4（テンプレートの責務）、§6.5（スニペットの責務）、§6.6（変数規約）、§8（拡充計画）を更新
+
+### 決定事項
+- **テンプレートは1個の汎用ファイル `runbook.md.j2` に集約する**。理由：CREATE/MODIFY/DELETE の差異は構造ではなく語彙（操作ラベル `(CREATE)` 等）と参照スニペットの違いに収まり、3個に分けても差分はわずかで重複コストが上回る
+- **コマンド本体はシェル変数で書く**。理由：（1）`${VPC_ID}` のように事前確認で取得した値を主処理・事後確認に伝播させる経路として自然、（2）読み手が値を書き換えて再実行できる、（3）「`{{ vpc_id }}` が空のまま `--vpc-id ` で出力される」既知バグが構造的に解消する
+- **例示出力は Jinja 変数のままにする**。理由：runbook の実設定値（リージョン・CIDR・名前）が結果例に反映されるとリアル化し、読み手が実際の出力と比較しやすい。スニペット作者は標準 param 名（`vpc_cidr`、`vpc_name` など）に依拠することを許容する
+- **YAML の `value` は文字列で書く**（例：`value: "true"`）。シェル変数値として展開され、JSON 文字列として埋め込まれるため、Python の bool が `True`（大文字）に変換されると JSON が壊れる
+- **`RUNBOOK_TITLE` 生成は YAML の `slug` フィールドから行う**。日本語タイトルを `lower | replace(' ', '-')` で英数字化していた既知課題を解消
+- **パラメータプレビュー（`cat << EOF > $FILE_PARAMETER`）ブロックは廃止**。現状の 0102 では preview と execution の値が乖離して既に壊れており、元から監査ログ用途として運用されていたかも怪しい。再導入が必要なら別タスクで設計する（TASKS.md フェーズ1.5「残課題」に記録）
+- `generate.py` のコメントは日本語で記述する。ただしエラーメッセージと argparse help は英語のままとする（スタックトレースでの文字化けリスク回避、`--help` の国際的可読性のため）
+
+### 解消した既知課題
+- 0102 の主処理 `--vpc-id ` が空の問題
+- `RUNBOOK_TITLE="0102-vpc属性を設定する"` の日本語混入問題
+
+
 ## 2026-05-09: 仕様簡素化の実装追従（generate.py 刷新）
 
 ### 実施内容

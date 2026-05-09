@@ -27,6 +27,40 @@
 
 ---
 
+## フェーズ1.5: テンプレート汎化 — 完了
+
+テンプレートが「操作タイプ × 特定リソース」で1対1に貼り付き、新リソースを追加するたびに新テンプレートが要る状態（SPEC §1.1 の「資産として蓄積」方針に反する）を解消した。汎用テンプレート1個 + 役割中立スニペットの組合せに移行済み。
+
+### 設計
+- [✓] 汎用テンプレート `templates/runbook.md.j2` を新設（CREATE/MODIFY/DELETE 共通）
+- [✓] runbook YAML スキーマに `slug` / `operation` / `shell_vars` / `pre_checks[]` / `main` / `post_checks[]` を導入（SPEC §4.1 更新）
+- [✓] スニペット内の変数規約を確立（コマンド本体はシェル変数、例示出力は Jinja 変数。SPEC §6.6 で明文化）
+- [✓] パラメータプレビュー（`cat << EOF > $FILE_PARAMETER`）ブロックは廃止 — 0102 で破綻していたため
+- [✓] 1.1 の `RUNBOOK_TITLE` を `slug` から生成（既知課題「日本語タイトルが混入」を解消）
+
+### 実装
+- [✓] `templates/runbook.md.j2` を作成（pre_checks/post_checks の自動採番、shell_vars ループ展開）
+- [✓] スニペット新設：`list-vpcs.md` / `find-vpc-id-by-cidr.md` / `describe-vpc-dns-attributes.md`
+- [✓] 既存スニペット書き換え（コマンドをシェル変数化）：`create-vpc.md` / `describe-vpcs.md` / `modify-vpc-attribute.md` / `describe-vpc-attribute.md`
+- [✓] `examples/runbooks/0101-create-vpc.yaml` を新スキーマに移行
+- [✓] `examples/runbooks/0102-modify-dns-hostname.yaml` を新スキーマに移行
+- [✓] 旧テンプレート削除：`templates/ec2-create-vpc.md.j2` / `templates/ec2-modify-vpc-attribute.md.j2`
+- [✓] `generate.py` に `params` dict 注入と `shell_var` フィルタを追加
+
+### 検証
+- [✓] 既知課題2件の解消を確認
+  - 0102 主処理 `--vpc-id ` が空 → `--vpc-id ${VPC_ID}` に修正済み
+  - `RUNBOOK_TITLE` 日本語混入 → `0102-modify-dns-hostname` に修正済み
+- [✓] 0101 / 0102 の生成物が SPEC §9 の構造に従うことを確認
+- [✓] スニペット側の変数規約（コマンド = shell var、例示出力 = Jinja）が両 runbook で機能することを確認
+
+### 残課題（次のタスクで扱う）
+- [ ] 監査ログ用パラメータプレビューブロックの再設計（必要なら）
+- [ ] `runbook.cleanup` フィールドの導入（3.99 中間リソース削除を YAML から指定可能に）
+- [ ] 複数 post_check に title/description を持たせる UI（現状は snippet のみ）
+
+---
+
 ## フェーズ1: プロトタイプ（VPC作成シナリオ）— 完了
 
 ### スニペット作成
@@ -57,9 +91,9 @@
 - [ ] 生成物と現行手順書（0101-CreateVPC-Runbook.md, 0102-ModifyDNSHostname-Runbook.md）の比較確認
 - [ ] 生成物がCloudShellで読みながら実行できる品質であることの確認
 
-### 既知の課題（テンプレート側、generate.py 自体ではない／別タスクで扱う）
-- `templates/ec2-modify-vpc-attribute.md.j2` で include する `snippets/ec2/modify-vpc-attribute.md` および `describe-vpc-attribute.md` が `{{ vpc_id }}` を要求するが、テンプレート/YAML 側でセットされていないため `--vpc-id ` の値が空になる。テンプレート側で `{% set vpc_id = "${VPC_ID}" %}` を追加するか、シェル変数として直書きする方針の決定が必要。
-- `templates/ec2-modify-vpc-attribute.md.j2` の `RUNBOOK_TITLE` が `runbook.title | lower | replace(' ', '-')` から生成されているため、日本語タイトルでは使い物にならない（例: `0102-vpc属性を設定する`）。runbook YAML に `slug` フィールドを追加する等の方針決定が必要。
+### 既知の課題 — フェーズ1.5 で解消済み
+- ~~`templates/ec2-modify-vpc-attribute.md.j2` で include する `snippets/ec2/modify-vpc-attribute.md` および `describe-vpc-attribute.md` が `{{ vpc_id }}` を要求するが、テンプレート/YAML 側でセットされていないため `--vpc-id ` の値が空になる~~ → スニペットをシェル変数規約に変更し、事前確認で取得した `${VPC_ID}` がそのまま伝播する形に解決
+- ~~`templates/ec2-modify-vpc-attribute.md.j2` の `RUNBOOK_TITLE` が `runbook.title | lower | replace(' ', '-')` から生成されているため、日本語タイトルでは使い物にならない~~ → runbook YAML に `slug` フィールドを追加し、`{{ runbook.id }}-{{ runbook.slug }}` で生成する形に解決
 
 ---
 

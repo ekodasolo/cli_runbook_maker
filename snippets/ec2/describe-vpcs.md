@@ -2,8 +2,8 @@ VPCの一覧を確認する。
 
 ```bash
 aws ec2 describe-vpcs \
-    --filters "Name=cidr-block,Values={{ vpc_cidr }}" \
-    --region {{ region }}
+    --filters "Name=cidr-block,Values=${VPC_CIDR}" \
+    --region ${AWS_REGION}
 ```
 
 結果の例
@@ -11,7 +11,7 @@ aws ec2 describe-vpcs \
 {
     "Vpcs": [
         {
-            "CidrBlock": "10.0.0.0/24",
+            "CidrBlock": "{{ vpc_cidr }}",
             "DhcpOptionsId": "dopt-0ded636f18bc345d7",
             "State": "available",
             "VpcId": "vpc-0701707c27407b25d",
@@ -20,7 +20,7 @@ aws ec2 describe-vpcs \
             "CidrBlockAssociationSet": [
                 {
                     "AssociationId": "vpc-cidr-assoc-07a876b8ac3175c6a",
-                    "CidrBlock": "10.0.0.0/24",
+                    "CidrBlock": "{{ vpc_cidr }}",
                     "CidrBlockState": {
                         "State": "associated"
                     }
@@ -30,7 +30,7 @@ aws ec2 describe-vpcs \
             "Tags": [
                 {
                     "Key": "Name",
-                    "Value": "project-dev-main-vpc"
+                    "Value": "{{ vpc_name }}"
                 }
             ]
         }

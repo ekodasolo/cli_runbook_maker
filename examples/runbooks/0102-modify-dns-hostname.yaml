@@ -1,13 +1,15 @@
 runbook:
   id: "0102"
+  slug: "modify-dns-hostname"
   title: "VPC属性を設定する"
   about: |
-    VPCを作成するCLI手順書。
+    VPC属性を変更するCLI手順書。
 
     本手順では、VPCの属性値を変更し、DNS Hostnameを有効にする。
   services:
     - EC2/VPC
   duration: "5 Min"
+  operation: MODIFY
 
   before:
     - VPCが作成済みである。
@@ -15,7 +17,30 @@ runbook:
   after:
     - VPCのDNS hostnamesが、Enabledになっている。
 
-  template: ec2-modify-vpc-attribute
+  template: runbook
+
+  shell_vars:
+    AWS_REGION: region
+    VPC_CIDR: vpc_cidr
+    ATTRIBUTE: attribute
+    CLI_OPTION: cli_option
+    VALUE: value
+
+  pre_checks:
+    - title: "VPCが作成済みであることの確認"
+      description: |
+        VPCが作成済みか、事前に確認する。作成済みの場合は VPC ID を取得しておく。
+      snippet: snippets/ec2/find-vpc-id-by-cidr.md
+    - title: "VPC属性 (DNS Hostname) の現状確認"
+      description: |
+        VPCのDNS関連属性の現状を確認する。DNS HostnameがDisabledであることを確認する。
+      snippet: snippets/ec2/describe-vpc-dns-attributes.md
+
+  main:
+    snippet: snippets/ec2/modify-vpc-attribute.md
+
+  post_checks:
+    - snippet: snippets/ec2/describe-vpc-attribute.md
 
   params_files:
     - ../params/training-common.yaml
@@ -23,8 +48,9 @@ runbook:
   params:
     attribute: enableDnsHostnames
     cli_option: enable-dns-hostnames
-    value: true
+    value: "true"
 
   navigation:
-    next_title: "Subnetを作成する"
-    next_link: "./0200-CreateSubnet-Scenario.md"
+    next:
+      title: "Subnetを作成する"
+      link: "./0200-CreateSubnet-Scenario.md"
