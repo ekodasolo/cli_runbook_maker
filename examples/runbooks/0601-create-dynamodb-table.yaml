@@ -1,0 +1,57 @@
+runbook:
+  id: "0601"
+  title: "DynamoDB テーブルを作成する"
+  about: |
+    DynamoDB テーブル作成の CLI 手順書。
+
+    本手順では、オンデマンドキャパシティモードのテーブルを作成する。
+    パーティションキー PK（文字列）とソートキー SK（文字列）の
+    複合キー構成で、Single Table Design を想定した汎用スキーマとする。
+  services:
+    - DynamoDB
+  duration: "3 Min"
+  operation: CREATE
+
+  before:
+    - DynamoDB テーブルの作成権限があること。
+    - 同名のテーブルが存在しないこと。
+  after:
+    - テーブルが ACTIVE 状態であること。
+    - キースキーマが PK(HASH) + SK(RANGE) であること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "既存テーブルの確認"
+      description: |
+        リージョン内のテーブル一覧を確認する。
+      snippet: snippets/dynamodb/list-tables.md
+    - title: "同名テーブルの非存在確認"
+      description: |
+        同名のテーブルが存在しないことを確認する。
+        ResourceNotFoundException が返れば作成可能。
+      snippet: snippets/dynamodb/describe-table.md
+
+  main:
+    snippet: snippets/dynamodb/create-table.md
+
+  post_checks:
+    - title: "テーブル状態の確認"
+      description: |
+        TableStatus が ACTIVE であること、
+        キースキーマが PK(HASH) + SK(RANGE) であることを確認する。
+      snippet: snippets/dynamodb/describe-table.md
+
+  params_files:
+    - ../params/training-dynamodb.yaml
+
+  params:
+    partition_key_name: PK
+    partition_key_type: S
+    sort_key_name: SK
+    sort_key_type: S
+
+  navigation:
+    next:
+      title: "DynamoDB GSI を追加する"
+      link: "./0602-create-dynamodb-gsi.md"

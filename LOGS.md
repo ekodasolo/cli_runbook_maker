@@ -1,5 +1,26 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-10: DynamoDB テーブル操作対応（フェーズ5）
+
+### 実施内容
+- DynamoDB 用スニペット6件を `snippets/dynamodb/` に新設
+  - 従来パターン（インライン）: `list-tables.md`、`describe-table.md`、`create-table.md`、`update-time-to-live.md`
+  - 中立チェック: `describe-table.md`、`describe-time-to-live.md`
+  - `file://` パターン + wait: `update-table-gsi.md`
+  - インライン + wait: `create-table.md`
+- サンプル runbook 3件を作成: `0601-create-dynamodb-table.yaml`（CREATE）、`0602-create-dynamodb-gsi.yaml`（MODIFY, `file://`）、`0603-configure-dynamodb-ttl.yaml`（MODIFY）
+- DynamoDB 用共通パラメータファイル `examples/params/training-dynamodb.yaml` を新設
+- Navigation 連鎖: 0601 → 0602 → 0603
+- SPEC §8 に DynamoDB スニペット一覧を追加、「追加予定」から DynamoDB を除外
+- KNOWLEDGE.md §5.2 に `06xx` = DynamoDB を追加
+
+### 決定事項
+- **テーブル作成はインライン方式**。PK/SK + PAY_PER_REQUEST のシンプルな構成なので `--attribute-definitions` / `--key-schema` を直書きで十分。`file://` パターンにするほどの複雑さはない
+- **GSI 追加は `file://` パターン**。`--global-secondary-index-updates` の JSON は `Create > IndexName > KeySchema > Projection` と深くネストするため、ヒアドキュメントで書き出して `jq` チェック後に `file://` で参照する
+- **TTL 設定はインライン方式**。`--time-to-live-specification "Enabled=true,AttributeName=ttl"` の shorthand 記法で1行に収まる
+- **wait は `aws dynamodb wait table-exists` を使用**。テーブル作成と GSI 追加の両方で、テーブルが ACTIVE に戻るまで待機する用途に使える
+- **テンプレート・ジェネレータへの変更なし**。フェーズ2〜4 に続き、スニペットと runbook YAML の追加だけで新サービスに対応できた
+
 ## 2026-05-10: CloudFormation スタック操作対応（フェーズ4）
 
 ### 実施内容

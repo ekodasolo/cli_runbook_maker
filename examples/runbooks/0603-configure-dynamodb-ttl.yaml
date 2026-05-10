@@ -1,0 +1,54 @@
+runbook:
+  id: "0603"
+  title: "DynamoDB TTL を設定する"
+  about: |
+    DynamoDB Time to Live (TTL) 設定の CLI 手順書。
+
+    本手順では、0601 で作成したテーブルに TTL を設定する。
+    ttl 属性に Unix エポック秒を格納すると、有効期限切れのアイテムが
+    自動的に削除される。
+  services:
+    - DynamoDB
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - テーブルが ACTIVE 状態であること。
+    - TTL が未設定であること。
+  after:
+    - TTL が ENABLED 状態であること。
+    - TTL 属性が ttl であること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象テーブルの存在確認"
+      description: |
+        操作対象のテーブルが存在し、ACTIVE 状態であることを確認する。
+      snippet: snippets/dynamodb/describe-table.md
+    - title: "TTL 設定の確認"
+      description: |
+        TTL が無効（DISABLED）であることを確認する。
+      snippet: snippets/dynamodb/describe-time-to-live.md
+
+  main:
+    snippet: snippets/dynamodb/update-time-to-live.md
+
+  post_checks:
+    - title: "TTL 設定の確認"
+      description: |
+        TimeToLiveStatus が ENABLED であること、
+        AttributeName が ttl であることを確認する。
+      snippet: snippets/dynamodb/describe-time-to-live.md
+
+  params_files:
+    - ../params/training-dynamodb.yaml
+
+  params:
+    # テーブルのキー情報（describe-table の結果例で使用）
+    partition_key_name: PK
+    partition_key_type: S
+    sort_key_name: SK
+    sort_key_type: S
+    # TTL 固有パラメータ
+    ttl_attribute_name: ttl

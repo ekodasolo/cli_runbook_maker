@@ -1,0 +1,59 @@
+runbook:
+  id: "0602"
+  title: "DynamoDB GSI を追加する"
+  about: |
+    DynamoDB Global Secondary Index (GSI) 追加の CLI 手順書。
+
+    本手順では、0601 で作成したテーブルに GSI を追加する。
+    GSI1PK（文字列）をパーティションキー、GSI1SK（文字列）を
+    ソートキーとし、全属性を射影する。
+  services:
+    - DynamoDB
+  duration: "5 Min"
+  operation: MODIFY
+
+  before:
+    - テーブルが ACTIVE 状態であること（0601 が完了済み）。
+  after:
+    - GSI が ACTIVE 状態であること。
+    - GSI のキースキーマが GSI1PK(HASH) + GSI1SK(RANGE) であること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象テーブルの存在確認"
+      description: |
+        操作対象のテーブルが存在し、ACTIVE 状態であることを確認する。
+      snippet: snippets/dynamodb/describe-table.md
+
+  main:
+    snippet: snippets/dynamodb/update-table-gsi.md
+
+  post_checks:
+    - title: "テーブルと GSI の状態確認"
+      description: |
+        テーブルが ACTIVE 状態であること、
+        GSI が ACTIVE で KeySchema が GSI1PK(HASH) + GSI1SK(RANGE) であることを確認する。
+      snippet: snippets/dynamodb/describe-table.md
+
+  params_files:
+    - ../params/training-dynamodb.yaml
+
+  params:
+    # テーブルのキー情報（describe-table の結果例で使用）
+    partition_key_name: PK
+    partition_key_type: S
+    sort_key_name: SK
+    sort_key_type: S
+    # GSI 固有パラメータ
+    gsi_name: GSI1
+    gsi_partition_key_name: GSI1PK
+    gsi_partition_key_type: S
+    gsi_sort_key_name: GSI1SK
+    gsi_sort_key_type: S
+    gsi_projection_type: ALL
+
+  navigation:
+    next:
+      title: "DynamoDB TTL を設定する"
+      link: "./0603-configure-dynamodb-ttl.md"
