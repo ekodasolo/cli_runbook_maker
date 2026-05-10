@@ -1,0 +1,44 @@
+runbook:
+  id: "0504"
+  title: "CFn スタックを削除する"
+  about: |
+    CloudFormation スタック削除の CLI 手順書。
+
+    本手順では、トレーニング用スタックとスタック内のすべてのリソース（S3 バケット）を
+    削除する。削除後はスタックが存在しないことを確認する。
+  services:
+    - CloudFormation
+  duration: "5 Min"
+  operation: DELETE
+
+  before:
+    - 削除対象のスタックが存在すること（0501 が完了済み）。
+    - スタック内のリソース（S3 バケット）が空であること。
+  after:
+    - スタックが削除されていること（describe-stacks で ValidationError が返ること）。
+
+  template: runbook
+
+  pre_checks:
+    - title: "削除対象スタックの確認"
+      description: |
+        削除対象のスタックが存在し、その状態を確認する。
+      snippet: snippets/cloudformation/describe-stacks.md
+
+  main:
+    snippet: snippets/cloudformation/delete-stack.md
+
+  post_checks:
+    - title: "スタック削除の確認"
+      description: |
+        スタックが削除されていることを確認する。
+        ValidationError（does not exist）が返れば削除完了。
+      snippet: snippets/cloudformation/describe-stacks.md
+
+  params_files:
+    - ../params/training-cfn.yaml
+
+  params:
+    stack_parameters:  # 例示出力用（削除前の最終状態）
+      - key: Environment
+        value: staging

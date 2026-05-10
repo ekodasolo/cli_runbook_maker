@@ -1,0 +1,54 @@
+runbook:
+  id: "0502"
+  title: "CFn Change Set を作成する"
+  about: |
+    CloudFormation Change Set 作成の CLI 手順書。
+
+    本手順では、0501 で作成したスタックに対して Change Set を作成する。
+    Environment パラメータを dev から staging に変更し、
+    変更内容をプレビューできる状態にする。
+
+    Change Set の実行（適用）は次の手順 0503 で行う。
+  services:
+    - CloudFormation
+  duration: "3 Min"
+  operation: CREATE
+
+  before:
+    - スタックが CREATE_COMPLETE または UPDATE_COMPLETE 状態であること（0501 が完了済み）。
+  after:
+    - Change Set が CREATE_COMPLETE かつ ExecutionStatus が AVAILABLE であること。
+    - Changes に TrainingBucket の Tags 変更が表示されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象スタックの存在確認"
+      description: |
+        操作対象のスタックが存在し、CREATE_COMPLETE または UPDATE_COMPLETE
+        状態であることを確認する。
+      snippet: snippets/cloudformation/describe-stacks.md
+
+  main:
+    snippet: snippets/cloudformation/create-change-set.md
+
+  post_checks:
+    - title: "Change Set の確認"
+      description: |
+        Status が CREATE_COMPLETE、ExecutionStatus が AVAILABLE であること、
+        Changes に TrainingBucket の Tags 変更（Replacement: False）が
+        表示されていることを確認する。
+      snippet: snippets/cloudformation/describe-change-set.md
+
+  params_files:
+    - ../params/training-cfn.yaml
+
+  params:
+    stack_parameters:
+      - key: Environment
+        value: staging
+
+  navigation:
+    next:
+      title: "CFn Change Set を実行する"
+      link: "./0503-execute-cfn-change-set.md"

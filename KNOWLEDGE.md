@@ -96,7 +96,7 @@ aws <service> <command> \
 ```
 ```
 
-該当例: `put-bucket-lifecycle-configuration.md`, `put-bucket-policy.md`
+該当例: `put-bucket-lifecycle-configuration.md`, `put-bucket-policy.md`, `put-key-policy.md`
 
 **必須ルール**: ヒアドキュメント直後に `jq .` でフォーマットチェックを入れること。
 
@@ -107,6 +107,117 @@ aws <service> <command> \
 | JSON なし、またはキーバリュー形式 | インライン（`Status=Enabled` 等） |
 | JSON が小さく構造が固定 | インライン（`'{"Rules":[...]}'`） |
 | JSON が大きい、または構造が可変 | `file://` パターン |
+
+### 1.5 `file://` + Jinja2 ループパターン（可変長パラメータ）
+
+CLI コマンドに渡すパラメータの数・名前がランブックごとに異なる場合、`file://` パターンと Jinja2 ループを組み合わせる。runbook YAML でリスト型パラメータを定義し、スニペット内でループ展開して JSON ファイルを生成する。
+
+runbook YAML:
+```yaml
+params:
+  stack_parameters:
+    - key: Environment
+      value: dev
+    - key: VpcCidr
+      value: "10.0.0.0/16"
+```
+
+スニペット:
+```
+```bash
+cat << 'EOF' > /tmp/stack-params.json
+[
+{% for p in stack_parameters %}
+    {
+        "ParameterKey": "{{ p.key }}",
+        "ParameterValue": "{{ p.value }}"
+    }{{ ',' if not loop.last else '' }}
+{% endfor %}
+]
+EOF
+```
+
+```bash
+jq . /tmp/stack-params.json
+```
+
+```bash
+aws cloudformation create-stack \
+    --parameters file:///tmp/stack-params.json \
+    ...
+```
+```
+
+該当例: `create-stack.md`, `create-change-set.md`
+
+**TIPS**:
+- リスト型パラメータは 1.1 のパラメータテーブルからは自動的に除外される（テンプレート側のフィルタ）。パラメータの中身はコマンド内の JSON 展開で可視化される
+- `loop.last` でカンマ制御する。`trim_blocks` + `lstrip_blocks` 環境では `{% for %}` / `{% endfor %}` 行が消費されるため出力は綺麗になる
+- 結果例の出力でも同じループを使って Jinja2 変数で展開できる
+- 配列型の値（例: セキュリティグループの CIDR リスト）にも対応するため、`{{ p.value }}` ではなく `{{ p.value | join(',') if p.value is sequence and p.value is not string else p.value }}` を使う。CloudFormation の `CommaDelimitedList` 型パラメータに対応し、YAML 側で `value: ["10.0.0.0/16", "172.16.0.0/12"]` と書けば `10.0.0.0/16,172.16.0.0/12` に展開される
+- ループ変数が runbook YAML で未指定の場合に備え、ループとその前後の関連ブロック（ヒアドキュメント、jq チェック、`--parameters` オプション、結果例の Parameters セクション等）を `{% if stack_parameters %}` で囲む。未指定時に空の JSON やオプションが出力されるのを防ぐ
+
+### 1.6 S3 テンプレート参照パターン（validate + create + wait）
+
+CloudFormation のように、テンプレートを CLI の外で管理し S3 URI で参照する場合。テンプレート自体は手順書のスコープ外（事前に作成・S3 アップロード済み）。スニペットは validate → 操作 → wait の構成を取る。
+
+```
+[検証の説明文]
+
+```bash
+aws cloudformation validate-template \
+    --template-url {{ template_url }} \
+    --region {{ region }}
+```
+
+[スタック作成の説明文]
+
+```bash
+aws cloudformation create-stack \
+    --stack-name {{ stack_name }} \
+    --template-url {{ template_url }} \
+    --parameters file:///tmp/stack-params.json \
+    ...
+```
+
+[wait の説明文]
+
+```bash
+aws cloudformation wait stack-create-complete ...
+```
+```
+
+該当例: `create-stack.md`
+
+**TIPS**: CloudFormation テンプレートは CLI 手順書のスコープ外で管理する。テンプレートの作成・修正は別の作業として行い、手順書では S3 上のテンプレートを参照するだけにする。Jinja2 変数はテンプレート URL やコマンドパラメータ（`--parameters ParameterKey=X,ParameterValue={{ param }}`）に使う。
+
+### 1.7 非同期操作パターン（コマンド + wait）
+
+操作が非同期で完了を待つ必要がある場合。`wait` コマンドをスニペット内に含める（§6.5 例外: 関連コマンド）。
+
+```
+[操作の説明文]
+
+```bash
+aws <service> <command> \
+    --option {{ param }} \
+    --region {{ region }}
+```
+
+[wait の説明文]
+
+```bash
+aws <service> wait <condition> \
+    --option {{ param }} \
+    --region {{ region }}
+```
+
+出力はなく正常終了すれば完了。
+```
+
+該当例: `create-stack.md`, `execute-change-set.md`, `delete-stack.md`, `create-change-set.md`
+
+**TIPS**: 人間が読みながら操作する手順書では、wait の前に「プロンプトが返るまで待つ」等の案内を入れると親切。
 
 
 ## 2. ランブック設計パターン
@@ -123,7 +234,7 @@ post_checks:
   1. 作成されたリソースの確認          ← 同じ中立チェックスニペットを使い、description で「存在を期待」と案内
 ```
 
-該当例: `0101-create-vpc`, `0201-create-ssm-parameter-*`, `0301-create-s3-bucket`
+該当例: `0101-create-vpc`, `0201-create-ssm-parameter-*`, `0301-create-s3-bucket`, `0501-create-cfn-stack`
 
 ### 2.2 MODIFY パターン
 
@@ -137,9 +248,24 @@ post_checks:
   1. 変更後の設定確認                  ← pre_check と同じ get 系スニペット
 ```
 
-該当例: `0102-modify-dns-hostname`, `0203-update-ssm-parameter-*`, `0302`〜`0306`
+該当例: `0102-modify-dns-hostname`, `0203-update-ssm-parameter-*`, `0302`〜`0306`, `0503-execute-cfn-change-set`
 
-### 2.3 操作タイプの判定
+### 2.3 DELETE パターン
+
+```
+pre_checks:
+  1. 削除対象リソースの存在確認          ← 中立チェックスニペットを使い、description で「存在を期待」と案内
+main:
+  リソース削除コマンド（+ wait）
+post_checks:
+  1. リソース削除の確認                  ← 同じ中立チェックスニペットを使い、description で「非存在を期待」と案内
+```
+
+該当例: `0504-delete-cfn-stack`
+
+**TIPS**: 削除操作では post_check の中立チェックで「非存在」側の結果が期待される。CREATE の逆パターン。
+
+### 2.4 操作タイプの判定
 
 | 操作の性質 | operation ラベル |
 | --- | --- |
@@ -200,7 +326,9 @@ post_checks:
 ### 4.4 値の記述規約
 
 - JSON リテラルに埋め込まれる値は YAML 上で文字列として書く: `value: "true"`（`value: true` は NG）
-- リスト値は YAML のリスト構文をそのまま使う: `parameter_labels: [production-2026-q2]`
+- 文字列リストは YAML のリスト構文をそのまま使う: `parameter_labels: [production-2026-q2]`
+  - 1.1 パラメータテーブルでは `join(', ')` で表示される
+- 辞書リスト（`stack_parameters` 等）はスニペット内の Jinja2 ループで展開する。1.1 パラメータテーブルでは通常テーブルとは別に `| ParameterKey | ParameterValue |` 形式のサブテーブルとして表示される
 
 
 ## 5. 命名規則
@@ -226,8 +354,8 @@ snippets/
 
 `{4桁ID}-{動詞}-{リソース概要}.yaml`
 
-- ID のプレフィックスでサービスを分類: `01xx` = EC2, `02xx` = SSM, `03xx` = S3
-- 動詞は操作の意図を明示: `create-`, `enable-`, `configure-`, `update-`, `label-`
+- ID のプレフィックスでサービスを分類: `01xx` = EC2, `02xx` = SSM, `03xx` = S3, `04xx` = KMS, `05xx` = CloudFormation
+- 動詞は操作の意図を明示: `create-`, `enable-`, `configure-`, `update-`, `label-`, `execute-`, `delete-`
 
 ### 5.3 パラメータ名
 
@@ -281,3 +409,7 @@ value: "true"
 ### 7.4 file:// パターンで `cat << 'EOF'` を使う理由
 
 `'EOF'`（シングルクォート）にすることで、ヒアドキュメント内のシェル変数展開を抑制する。Jinja2 変数は生成時に即値に展開されるため問題ないが、万が一 `$` を含む値（ARN 等）があった場合の誤展開を防ぐ。
+
+### 7.5 ループ変数の未指定ガード
+
+`{% for p in stack_parameters %}` のようなループを使うスニペットでは、`stack_parameters` が runbook YAML で定義されていない場合も正常動作しなければならない。ループだけでなく、そのループに依存するブロック全体（ヒアドキュメント、jq チェック、CLI オプション、結果例のセクション）を `{% if stack_parameters %}` で囲むこと。ガードがないと、パラメータなしの場合に空の JSON ファイル作成や不要なオプション付与が出力される。

@@ -347,7 +347,55 @@ vars:
 
 ---
 
-## フェーズ4: 追加操作タイプ（予定）
+## フェーズ4: CloudFormation 対応 — 完了
 
-- [ ] CloudFormation: スタック作成、変更セット作成、変更セット実行、スタック削除
+汎用テンプレート（`runbook.md.j2`）をそのまま使い、CloudFormation 用スニペット追加と runbook YAML 作成のみで実現。非同期操作には `aws cloudformation wait` をスニペット内に含める。テンプレートは CLI 手順書のスコープ外で管理し、S3 URI で参照する方式。プロジェクト初の DELETE 操作タイプ。
+
+### 設計
+- [✓] S3 テンプレート参照方式（テンプレートは事前に S3 アップロード済みの前提。`--template-url` で参照）
+- [✓] 非同期操作パターン（`wait` コマンドをスニペットに含める。§6.5 例外: 関連コマンド）
+- [✓] Change Set は `--use-previous-template` + パラメータ変更のみ（テンプレート書き換え不要）
+- [✓] DELETE 操作タイプの初実装
+- [✓] `file://` + Jinja2 ループパターンの導入（`stack_parameters` リストを JSON に展開）
+- [✓] `templates/runbook.md.j2` のパラメータテーブルを型ベース2パス振り分けに改修（スカラー/文字列リスト → 通常テーブル、辞書リスト → 専用サブテーブル）
+- [✓] スニペット内の `{{ p.value }}` を配列型対応フィルタに置換（`join(',')` で CommaDelimitedList 互換）
+- [✓] スニペット内のループ変数に `{% if stack_parameters %}` 未指定ガードを追加
+
+### 実装
+- [✓] スニペット8件新設（`snippets/cloudformation/`）:
+  - `list-stacks.md` — アクティブなスタック一覧
+  - `describe-stacks.md` — スタック詳細確認（中立）
+  - `create-stack.md` — スタック作成（S3 テンプレート参照 + validate + wait）
+  - `describe-stack-events.md` — スタックイベント確認
+  - `create-change-set.md` — Change Set 作成（+ wait）
+  - `describe-change-set.md` — Change Set 詳細確認（中立）
+  - `execute-change-set.md` — Change Set 実行（+ wait）
+  - `delete-stack.md` — スタック削除（+ wait）
+- [✓] `examples/params/training-cfn.yaml` 新設
+- [✓] ランブック4件新設:
+  - `0501-create-cfn-stack.yaml` (CREATE, S3 テンプレート参照)
+  - `0502-create-cfn-change-set.yaml` (CREATE, --use-previous-template)
+  - `0503-execute-cfn-change-set.yaml` (MODIFY)
+  - `0504-delete-cfn-stack.yaml` (DELETE)
+- [✓] Navigation 連鎖: 0501 → 0502 → 0503 → 0504
+- [✓] SPEC §8 に CloudFormation スニペット一覧を追加
+
+### 検証
+- [✓] 全 19 runbook（0101-0504）の生成成功
+- [✓] S3 テンプレート参照（0501）で validate-template + create-stack + wait の3ステップ構成が正常出力
+- [✓] `file://` + Jinja2 ループ（0501, 0502）でスタックパラメータ JSON が正しく展開
+- [✓] `--use-previous-template`（0502）でパラメータ変更のみの Change Set 作成が正常出力
+- [✓] wait コマンドが各スニペットに正しく含まれる（create/update/delete/change-set）
+- [✓] DELETE 操作ラベル（0504）が正常出力
+- [✓] Navigation 連鎖（0501→0502→0503→0504）と末尾 0504 で Navigation セクション無し
+- [✓] パラメータテーブル: 辞書リスト（`stack_parameters`）が専用サブテーブルで表示、文字列リスト（`parameter_labels`）join 表示
+- [✓] 配列型パラメータ値（`value: ["10.0.0.0/16", "172.16.0.0/12"]`）が `10.0.0.0/16,172.16.0.0/12` に正しく展開
+- [✓] `stack_parameters` 未指定時にヒアドキュメント・jq・`--parameters` がスキップされることを確認
+- [✓] 連続生成で差分なし（冪等性）
+- [✓] 既存ランブック: 0204 の `parameter_labels` 表示改善のみ（意図した改善）
+
+---
+
+## フェーズ5: 追加操作タイプ（予定）
+
 - [ ] DynamoDB: テーブル作成、GSI作成、TTL設定

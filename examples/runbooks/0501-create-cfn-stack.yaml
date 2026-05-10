@@ -1,0 +1,61 @@
+runbook:
+  id: "0501"
+  title: "CFn スタックを作成する"
+  about: |
+    CloudFormation スタック作成の CLI 手順書。
+
+    本手順では、S3 上のテンプレートを使用してトレーニング用スタックを
+    東京リージョンにデプロイする。テンプレートは S3 バケットを1つ作成し、
+    Environment パラメータでタグを制御する。初回は dev 環境として作成する。
+  services:
+    - CloudFormation
+  duration: "5 Min"
+  operation: CREATE
+
+  before:
+    - CloudFormation スタックの作成権限があること。
+    - テンプレートが S3 にアップロード済みであること。
+    - 同名のスタックが存在しないこと。
+  after:
+    - スタックが CREATE_COMPLETE 状態であること。
+    - Outputs に BucketName と BucketArn が出力されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "既存スタックの確認"
+      description: |
+        リージョン内のアクティブなスタックを確認する。
+      snippet: snippets/cloudformation/list-stacks.md
+    - title: "同名スタックの非存在確認"
+      description: |
+        同名のスタックが存在しないことを確認する。
+        ValidationError が返れば作成可能。
+      snippet: snippets/cloudformation/describe-stacks.md
+
+  main:
+    snippet: snippets/cloudformation/create-stack.md
+
+  post_checks:
+    - title: "スタック状態の確認"
+      description: |
+        StackStatus が CREATE_COMPLETE であること、
+        Outputs に BucketName と BucketArn が出力されていることを確認する。
+      snippet: snippets/cloudformation/describe-stacks.md
+    - title: "スタックイベントの確認"
+      description: |
+        すべてのリソースが CREATE_COMPLETE になっていることを確認する。
+      snippet: snippets/cloudformation/describe-stack-events.md
+
+  params_files:
+    - ../params/training-cfn.yaml
+
+  params:
+    stack_parameters:
+      - key: Environment
+        value: dev
+
+  navigation:
+    next:
+      title: "CFn Change Set を作成する"
+      link: "./0502-create-cfn-change-set.md"
