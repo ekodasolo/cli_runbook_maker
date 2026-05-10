@@ -1,0 +1,9 @@
+# KMS キー操作系手順書の共通パラメータ
+#
+# S3 の SSE-KMS (0304) で使用するキーを作成・管理するための
+# トレーニング用パラメータ。
+params:
+  region: ap-northeast-1
+  key_alias: project-dev-training-key
+  key_description: "Project Dev training KMS key"
+  key_name: project-dev-training-key

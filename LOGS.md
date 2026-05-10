@@ -1,5 +1,25 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-10: KMS キー操作対応（フェーズ3+）
+
+### 実施内容
+- KMS 用スニペット7件を `snippets/kms/` に新設
+  - 従来パターン: `list-keys.md`、`create-key.md`、`describe-key.md`、`list-aliases.md`、`create-alias.md`、`get-key-policy.md`
+  - `file://` パターン: `put-key-policy.md`（3 Statement: Root/Admin/Usage）
+- サンプル runbook 3件を作成: `0401-create-kms-key.yaml`（CREATE）、`0402-create-kms-alias.yaml`（MODIFY）、`0403-configure-kms-key-policy.yaml`（MODIFY, `file://` パターン）
+- KMS 用共通パラメータファイル `examples/params/training-kms.yaml` を新設
+- Navigation 連鎖: 0401 → 0402 → 0403
+- SPEC §8 に KMS スニペット一覧を追加、「追加予定」から KMS を除外
+
+### 決定事項
+- **`key_ref` パラメータパターンの導入**。KMS キーの参照方法は KeyId（UUID）とエイリアス（`alias/xxx`）の2つがあり、ランブック間で使い分ける必要がある。`key_ref` という単一パラメータでどちらも受け取れるようスニペットを設計した:
+  - 0401（キー作成）/ 0402（エイリアス設定）: `key_ref: "${KEY_ID}"` — 実行時取得シェル変数
+  - 0403（ポリシー設定）: `key_ref: "alias/project-dev-training-key"` — エイリアス設定後なので即値
+  - 同一スニペット `describe-key.md` が両方の文脈で再利用できる
+- **ランブック間の値伝播設計**。0401 で `KEY_ID` をシェル変数に取得 → 0402 で `${KEY_ID}` として参照（エイリアス設定前なので KeyId が必要）→ 0403 ではエイリアスが存在するため即値に切り替え。シェル変数は「必要な区間」だけで使い、静的参照に切り替え可能になった時点で即値に戻す
+- **キーポリシーに `file://` パターンを適用**。3つの Statement（Root アカウントフルアクセス、管理者ロールのキー管理、利用者ロールの暗号化・復号）を含む JSON はインラインでは可読性が低いため、S3 バケットポリシーと同様に `file://` パターンを採用
+- **テンプレート・ジェネレータへの変更なし**。フェーズ2、フェーズ3 に続き、スニペットと runbook YAML の追加だけで新サービスに対応できた
+
 ## 2026-05-09: S3 バケット操作対応（フェーズ3）
 
 ### 実施内容

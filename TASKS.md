@@ -308,8 +308,46 @@ vars:
 
 ---
 
-## フェーズ3+: 追加操作タイプ（予定）
+## フェーズ3+: KMS 対応 — 完了
 
-- [ ] KMS: キー作成、エイリアス設定、キーポリシー設定
+汎用テンプレート（`runbook.md.j2`）をそのまま使い、KMS 用スニペット追加と runbook YAML 作成のみで実現。`key_ref` パラメータにより、実行時取得値（`${KEY_ID}`）と静的エイリアス（`alias/xxx`）を同一スニペットで扱えるパターンを導入。キーポリシー設定には `file://` パターン（§6.7）を適用。
+
+### 設計
+- [✓] `key_ref` パラメータパターンの導入（KeyId シェル変数 / エイリアスのいずれも同一スニペットで対応）
+- [✓] ランブック間の値伝播設計（0401 で KEY_ID 取得 → 0402 でシェル変数参照 → 0403 でエイリアス参照）
+- [✓] `file://` パターンでキーポリシー設定（3 Statement: Root/Admin/Usage）
+- [✓] テンプレート、`generate.py` への変更なし
+
+### 実装
+- [✓] スニペット7件新設（`snippets/kms/`）:
+  - `list-keys.md` — リージョン内のキー一覧
+  - `create-key.md` — キー作成（KEY_ID をシェル変数に取得）
+  - `describe-key.md` — キー詳細確認（中立、`key_ref` パラメータ）
+  - `list-aliases.md` — エイリアス一覧（中立、設定/未設定の両例）
+  - `create-alias.md` — エイリアス設定
+  - `get-key-policy.md` — キーポリシー確認（`jq` でパース）
+  - `put-key-policy.md` — キーポリシー設定（`file://` パターン）
+- [✓] `examples/params/training-kms.yaml` 新設
+- [✓] ランブック3件新設:
+  - `0401-create-kms-key.yaml` (CREATE)
+  - `0402-create-kms-alias.yaml` (MODIFY)
+  - `0403-configure-kms-key-policy.yaml` (MODIFY, `file://` パターン)
+- [✓] Navigation 連鎖: 0401 → 0402 → 0403
+- [✓] SPEC §8 に KMS スニペット一覧を追加
+
+### 検証
+- [✓] 全 15 runbook（0101-0403）の生成成功
+- [✓] `${KEY_ID}` が Jinja2 に解釈されずリテラルとして出力（0401, 0402）
+- [✓] 0403 で `alias/project-dev-training-key` が即値として出力
+- [✓] `file://` パターン（0403）でヒアドキュメント + jq チェック + CLI の3ステップ構成が正常出力
+- [✓] キーポリシー JSON に3つの Statement（Root/Admin/Usage）が正しく展開
+- [✓] Navigation 連鎖（0401→0402→0403）と末尾 0403 で Navigation セクション無し
+- [✓] 連続生成で差分なし（冪等性）
+- [✓] 既存ランブック（0101-0306）への影響なし
+
+---
+
+## フェーズ4: 追加操作タイプ（予定）
+
 - [ ] CloudFormation: スタック作成、変更セット作成、変更セット実行、スタック削除
 - [ ] DynamoDB: テーブル作成、GSI作成、TTL設定
