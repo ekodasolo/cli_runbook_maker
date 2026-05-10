@@ -354,7 +354,7 @@ snippets/
 
 `{4桁ID}-{動詞}-{リソース概要}.yaml`
 
-- ID のプレフィックスでサービスを分類: `01xx` = EC2, `02xx` = SSM, `03xx` = S3, `04xx` = KMS, `05xx` = CloudFormation
+- ID のプレフィックスでサービスを分類: `01xx` = EC2, `02xx` = SSM, `03xx` = S3, `04xx` = KMS, `05xx` = CloudFormation, `06xx` = DynamoDB
 - 動詞は操作の意図を明示: `create-`, `enable-`, `configure-`, `update-`, `label-`, `execute-`, `delete-`
 
 ### 5.3 パラメータ名

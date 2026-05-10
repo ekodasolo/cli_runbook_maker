@@ -396,6 +396,38 @@ vars:
 
 ---
 
-## フェーズ5: 追加操作タイプ（予定）
+## フェーズ5: DynamoDB 対応 — 完了
 
-- [ ] DynamoDB: テーブル作成、GSI作成、TTL設定
+汎用テンプレート（`runbook.md.j2`）をそのまま使い、DynamoDB 用スニペット追加と runbook YAML 作成のみで実現。GSI 追加の `--global-secondary-index-updates` には `file://` パターンを適用。テンプレート・ジェネレータへの変更なし。
+
+### 設計
+- [✓] テーブル作成はインライン（PK/SK + PAY_PER_REQUEST、`--attribute-definitions` / `--key-schema` を直書き）
+- [✓] GSI 追加は `file://` パターン（`--global-secondary-index-updates` の JSON が深くネストするため）
+- [✓] TTL 設定はインライン（`--time-to-live-specification` に shorthand 記法）
+- [✓] 非同期操作に `aws dynamodb wait table-exists`（create-table, update-table-gsi）
+- [✓] テンプレート、`generate.py` への変更なし
+
+### 実装
+- [✓] スニペット6件新設（`snippets/dynamodb/`）:
+  - `list-tables.md` — テーブル一覧
+  - `describe-table.md` — テーブル詳細確認（中立）
+  - `create-table.md` — テーブル作成（インライン + wait）
+  - `update-table-gsi.md` — GSI 追加（`file://` パターン + wait）
+  - `describe-time-to-live.md` — TTL 設定確認（中立）
+  - `update-time-to-live.md` — TTL 有効化
+- [✓] `examples/params/training-dynamodb.yaml` 新設
+- [✓] ランブック3件新設:
+  - `0601-create-dynamodb-table.yaml` (CREATE, PK/SK + PAY_PER_REQUEST)
+  - `0602-create-dynamodb-gsi.yaml` (MODIFY, `file://` パターン)
+  - `0603-configure-dynamodb-ttl.yaml` (MODIFY)
+- [✓] Navigation 連鎖: 0601 → 0602 → 0603
+- [✓] SPEC §8 に DynamoDB スニペット一覧を追加
+
+### 検証
+- [✓] 全 22 runbook（0101-0603）の生成成功
+- [✓] テーブル作成（0601）でインライン `--attribute-definitions` / `--key-schema` + wait が正常出力
+- [✓] GSI 追加（0602）で `file://` パターン（heredoc + jq + CLI + wait）が正常出力
+- [✓] TTL 設定（0603）でインライン `--time-to-live-specification` が正常出力
+- [✓] Navigation 連鎖（0601→0602→0603）と末尾 0603 で Navigation セクション無し
+- [✓] 連続生成で差分なし（冪等性）
+- [✓] 既存ランブック（0101-0504）への影響なし
