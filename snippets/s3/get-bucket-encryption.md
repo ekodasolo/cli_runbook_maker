@@ -40,3 +40,8 @@ aws s3api get-bucket-encryption \
     }
 }
 ```
+
+デフォルト暗号化が未設定の場合の結果例:
+```output
+An error occurred (ServerSideEncryptionConfigurationNotFoundError) when calling the GetBucketEncryption operation: The server side encryption configuration was not found
+```
