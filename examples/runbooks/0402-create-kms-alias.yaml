@@ -1,0 +1,48 @@
+runbook:
+  id: "0402"
+  title: "KMS キーにエイリアスを設定する"
+  about: |
+    KMS キーにエイリアスを設定する CLI 手順書。
+
+    本手順では、0401 で作成したキーに人間が読みやすいエイリアスを付与する。
+    エイリアス設定後は alias/project-dev-training-key でキーを参照できる。
+
+    前提: 0401 で取得した KEY_ID シェル変数が有効であること。
+  services:
+    - KMS
+  duration: "3 Min"
+  operation: MODIFY
+
+  before:
+    - KMS キーが作成済みであること（0401 が完了済み）。
+    - KEY_ID シェル変数にキー ID が設定されていること。
+  after:
+    - エイリアス alias/project-dev-training-key が設定されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象キーの存在確認"
+      description: |
+        操作対象のキーが存在し、Enabled 状態であることを確認する。
+      snippet: snippets/kms/describe-key.md
+
+  main:
+    snippet: snippets/kms/create-alias.md
+
+  post_checks:
+    - title: "エイリアス設定の確認"
+      description: |
+        エイリアスが作成され、対象キーに紐付いていることを確認する。
+      snippet: snippets/kms/list-aliases.md
+
+  params_files:
+    - ../params/training-kms.yaml
+
+  params:
+    key_ref: "${KEY_ID}"
+
+  navigation:
+    next:
+      title: "KMS キーポリシーを設定する"
+      link: "./0403-configure-kms-key-policy.md"

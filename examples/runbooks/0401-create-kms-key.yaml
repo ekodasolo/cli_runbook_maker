@@ -1,0 +1,46 @@
+runbook:
+  id: "0401"
+  title: "KMS キーを作成する"
+  about: |
+    KMS カスタマーマネージドキー作成の CLI 手順書。
+
+    本手順では、トレーニング用の対称暗号化キーを東京リージョンに作成する。
+    作成したキーの KeyId はシェル変数 KEY_ID に取得し、後続の手順で使用する。
+  services:
+    - KMS
+  duration: "3 Min"
+  operation: CREATE
+
+  before:
+    - KMS キーの作成権限があること。
+  after:
+    - カスタマーマネージドキーが作成されていること。
+    - Name タグが設定されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "既存キーの確認"
+      description: |
+        リージョン内の既存キーを確認する。
+      snippet: snippets/kms/list-keys.md
+
+  main:
+    snippet: snippets/kms/create-key.md
+
+  post_checks:
+    - title: "作成されたキーの確認"
+      description: |
+        KeyState が Enabled、Description とタグが指定どおりであることを確認する。
+      snippet: snippets/kms/describe-key.md
+
+  params_files:
+    - ../params/training-kms.yaml
+
+  params:
+    key_ref: "${KEY_ID}"
+
+  navigation:
+    next:
+      title: "KMS キーにエイリアスを設定する"
+      link: "./0402-create-kms-alias.md"

@@ -1,0 +1,51 @@
+runbook:
+  id: "0403"
+  title: "KMS キーポリシーを設定する"
+  about: |
+    KMS キーポリシーを設定する CLI 手順書。
+
+    本手順では、以下の3つの権限を定義したキーポリシーを設定する。
+    1. ルートアカウントへのフルアクセス（キー管理の基盤）
+    2. 管理者ロールへのキー管理権限
+    3. 利用者ロールへの暗号化・復号権限
+  services:
+    - KMS
+  duration: "5 Min"
+  operation: MODIFY
+
+  before:
+    - KMS キーが作成済みで、エイリアスが設定されていること（0401, 0402 が完了済み）。
+  after:
+    - キーポリシーが設定されていること。
+    - ルートアカウント、管理者ロール、利用者ロールの3つの Statement が含まれていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象キーの存在確認"
+      description: |
+        エイリアス経由でキーが参照可能であることを確認する。
+      snippet: snippets/kms/describe-key.md
+    - title: "現在のキーポリシーの確認"
+      description: |
+        キーポリシーの現在の設定を確認する。
+      snippet: snippets/kms/get-key-policy.md
+
+  main:
+    snippet: snippets/kms/put-key-policy.md
+
+  post_checks:
+    - title: "キーポリシーの確認"
+      description: |
+        3つの Statement (EnableRootAccountAccess, AllowKeyAdministration,
+        AllowKeyUsage) がすべて設定されていることを確認する。
+      snippet: snippets/kms/get-key-policy.md
+
+  params_files:
+    - ../params/training-kms.yaml
+
+  params:
+    key_ref: "alias/project-dev-training-key"
+    account_id: "123456789012"
+    key_admin_role_arn: "arn:aws:iam::123456789012:role/project-dev-admin-role"
+    key_usage_role_arn: "arn:aws:iam::123456789012:role/project-dev-s3-role"
