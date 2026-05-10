@@ -35,7 +35,7 @@ SSM パラメータラベル付与のCLI手順書。
 | parameter_type | `String` |
 | parameter_value | `db.example.internal` |
 | parameter_description | `Training environment DB host (updated for internal access)` |
-| parameter_labels | `['production-2026-q2']` |
+| parameter_labels | `production-2026-q2` |
 
 #### 1.2 対象パラメータの存在確認
 

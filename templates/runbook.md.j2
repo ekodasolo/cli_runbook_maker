@@ -26,15 +26,40 @@
 
 #### 1.1 処理パラメータ
 
-{% if params %}
+{% set scalar_params = {} %}
+{% set dict_list_params = {} %}
+{% for key, value in params.items() %}
+{% if value is string or value is number %}
+{% set _ = scalar_params.update({key: value}) %}
+{% elif value is sequence and value is not string and value | length > 0 and value[0] is string %}
+{% set _ = scalar_params.update({key: value | join(', ')}) %}
+{% elif value is sequence and value is not string and value | length > 0 and value[0] is mapping %}
+{% set _ = dict_list_params.update({key: value}) %}
+{% endif %}
+{% endfor %}
+{% if scalar_params %}
 本手順で使うパラメータ：
 
 | キー | 値 |
 | --- | --- |
-{% for key, value in params.items() %}
+{% for key, value in scalar_params.items() %}
 | {{ key }} | `{{ value }}` |
 {% endfor %}
-{% else %}
+{% endif %}
+{% if dict_list_params %}
+{% for param_name, items in dict_list_params.items() %}
+
+{{ param_name }}：
+
+| ParameterKey | ParameterValue |
+| --- | --- |
+{% for item in items %}
+{% set display_value = item.value | join(',') if item.value is sequence and item.value is not string else item.value %}
+| {{ item.key }} | `{{ display_value }}` |
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% if not scalar_params and not dict_list_params %}
 パラメータなし。
 {% endif %}
 

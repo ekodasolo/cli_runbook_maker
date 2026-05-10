@@ -1,0 +1,55 @@
+runbook:
+  id: "0503"
+  title: "CFn Change Set を実行する"
+  about: |
+    CloudFormation Change Set 実行の CLI 手順書。
+
+    本手順では、0502 で作成した Change Set を実行し、スタックを更新する。
+    Environment パラメータが dev から staging に変更され、
+    S3 バケットの Environment タグが更新される。
+  services:
+    - CloudFormation
+  duration: "5 Min"
+  operation: MODIFY
+
+  before:
+    - Change Set が CREATE_COMPLETE かつ AVAILABLE 状態であること（0502 が完了済み）。
+  after:
+    - スタックが UPDATE_COMPLETE 状態であること。
+    - Environment パラメータが staging に変更されていること。
+
+  template: runbook
+
+  pre_checks:
+    - title: "Change Set の実行可能確認"
+      description: |
+        Change Set の Status が CREATE_COMPLETE、
+        ExecutionStatus が AVAILABLE であることを確認する。
+      snippet: snippets/cloudformation/describe-change-set.md
+
+  main:
+    snippet: snippets/cloudformation/execute-change-set.md
+
+  post_checks:
+    - title: "スタック状態の確認"
+      description: |
+        StackStatus が UPDATE_COMPLETE であること、
+        Parameters の Environment が staging に変更されていることを確認する。
+      snippet: snippets/cloudformation/describe-stacks.md
+    - title: "スタックイベントの確認"
+      description: |
+        すべてのリソースが UPDATE_COMPLETE になっていることを確認する。
+      snippet: snippets/cloudformation/describe-stack-events.md
+
+  params_files:
+    - ../params/training-cfn.yaml
+
+  params:
+    stack_parameters:  # 例示出力用（更新後の値）
+      - key: Environment
+        value: staging
+
+  navigation:
+    next:
+      title: "CFn スタックを削除する"
+      link: "./0504-delete-cfn-stack.md"

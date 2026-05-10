@@ -1,5 +1,31 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-10: CloudFormation スタック操作対応（フェーズ4）
+
+### 実施内容
+- CloudFormation 用スニペット8件を `snippets/cloudformation/` に新設
+  - 従来パターン: `list-stacks.md`、`describe-stacks.md`、`describe-stack-events.md`、`describe-change-set.md`
+  - S3 テンプレート参照 + `file://` + ループ + wait パターン: `create-stack.md`
+  - `file://` + ループ + wait パターン: `create-change-set.md`
+  - wait パターン: `execute-change-set.md`、`delete-stack.md`
+- サンプル runbook 4件を作成: `0501-create-cfn-stack.yaml`（CREATE）、`0502-create-cfn-change-set.yaml`（CREATE）、`0503-execute-cfn-change-set.yaml`（MODIFY）、`0504-delete-cfn-stack.yaml`（DELETE）
+- CloudFormation 用共通パラメータファイル `examples/params/training-cfn.yaml` を新設
+- Navigation 連鎖: 0501 → 0502 → 0503 → 0504
+- `templates/runbook.md.j2` の 1.1 パラメータセクションを型ベース2パス振り分けに改修
+- スニペット内の `{{ p.value }}` を配列型対応フィルタに置換
+- スニペット内のループ変数に `{% if stack_parameters %}` 未指定ガードを追加
+- SPEC §8 に CloudFormation スニペット一覧を追加
+- KNOWLEDGE.md に新パターン5件（§1.5-1.7、§2.3、§7.5）と TIPS を追記
+
+### 決定事項
+- **S3 テンプレート参照方式の採用**。CloudFormation テンプレートは CLI 手順書のスコープ外で管理する前提。`--template-url` で S3 上のテンプレートを参照する方式に統一。テンプレートの作成・修正は別作業として扱う
+- **`file://` + Jinja2 ループパターンの導入**。CloudFormation のスタックパラメータは数・名前がランブックごとに異なるため、既存の `file://` パターンと Jinja2 ループを組み合わせる新パターンを設計。runbook YAML で `stack_parameters` リストを定義し、スニペット内で JSON に展開する
+- **配列型パラメータ値への対応**。`{{ p.value }}` を `{{ p.value | join(',') if p.value is sequence and p.value is not string else p.value }}` に置換。CloudFormation の `CommaDelimitedList` 型パラメータ（セキュリティグループの CIDR リスト等）に対応
+- **ループ変数の未指定ガード**。`stack_parameters` が未定義の場合に空の JSON やオプションが出力されないよう、ループとその依存ブロック全体を `{% if stack_parameters %}` で囲む。ループ単体ではなく、ヒアドキュメント・jq チェック・CLI オプション・結果例のセクションすべてをガード対象とする
+- **パラメータテーブルの型ベース2パス振り分け**。`params` の値を（1）スカラー/文字列リスト → 通常テーブル、（2）辞書リスト → `| ParameterKey | ParameterValue |` 形式のサブテーブルに分類表示。20個程度のスタックパラメータがあっても読みやすいテーブル形式にした。振り分けは Jinja2 テンプレート内で2パス構成（分類ループ → 出力ループ）で実装
+- **非同期操作パターン（wait コマンド）**。`aws cloudformation wait` をスニペット内に含める。§6.5 の例外規定「関連する一連のコマンド」に該当
+- **DELETE 操作タイプの初実装**。post_check で中立チェックスニペットの「非存在」側を期待する、CREATE の逆パターン
+
 ## 2026-05-10: KMS キー操作対応（フェーズ3+）
 
 ### 実施内容
