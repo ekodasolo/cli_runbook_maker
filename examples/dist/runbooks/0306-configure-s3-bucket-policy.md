@@ -41,6 +41,7 @@ S3 バケットにバケットポリシーを設定する CLI 手順書。
 | --- | --- |
 | region | `ap-northeast-1` |
 | bucket_name | `project-dev-training-bucket` |
+| bucket_policy_template | `snippets/s3/policies/full-restriction.json.j2` |
 | kms_key_arn | `arn:aws:kms:ap-northeast-1:123456789012:key/12345678-1234-1234-1234-123456789012` |
 | vpc_endpoint_id | `vpce-0123456789abcdef0` |
 | allowed_role_arn | `arn:aws:iam::123456789012:role/project-dev-s3-read-role` |
@@ -151,12 +152,7 @@ An error occurred (NoSuchBucketPolicy) when calling the GetBucketPolicy operatio
 
 #### 2.1 リソースの操作 (MODIFY)
 
-バケットポリシーの JSON ドキュメントを作成する。以下のポリシーは4つの制御を組み合わせたものである。
-
-1. TLS を使用しない Get/Put を拒否
-2. 指定 KMS キー以外で暗号化された Put を拒否
-3. 指定 VPC エンドポイント以外からの Get/Put を拒否
-4. 指定 IAM ロール以外からの Get を拒否
+バケットポリシーの JSON ドキュメントを作成する。
 
 ```bash
 cat << 'EOF' > /tmp/bucket-policy.json
@@ -219,6 +215,7 @@ cat << 'EOF' > /tmp/bucket-policy.json
         }
     ]
 }
+
 EOF
 ```
 

@@ -14,10 +14,10 @@ YAML 定義ファイルから、人間が CloudShell で読みながら対話的
 
 | サービス | スニペット | ランブック例 |
 | --- | --- | --- |
-| EC2 (VPC) | 7 | 2 |
+| EC2 (VPC) | 22 | 2 |
 | SSM Parameter Store | 6 | 4 |
-| S3 | 12 | 6 |
-| KMS | 7 | 3 |
+| S3 | 13 | 6 |
+| KMS | 8 | 3 |
 | CloudFormation | 8 | 4 |
 | DynamoDB | 6 | 3 |
 

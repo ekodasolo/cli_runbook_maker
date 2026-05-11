@@ -1,5 +1,28 @@
 # Runbook Toolkit 作業ログ
 
+## 2026-05-11: EC2 VPC ネットワーキングスニペット + サブスニペットパターン
+
+### 実施内容
+- EC2 VPC ネットワーキング用スニペット15件を `snippets/ec2/` に新設
+  - サブネット: `describe-subnets.md`（中立チェック）、`create-subnet.md`（SUBNET_ID 取得）
+  - インターネットゲートウェイ: `describe-internet-gateways.md`（中立チェック）、`create-internet-gateway.md`（IGW_ID 取得）、`attach-internet-gateway.md`
+  - ルートテーブル: `describe-route-tables.md`（中立チェック）、`create-route-table.md`（RTB_ID 取得）、`create-route.md`、`associate-route-table.md`
+  - セキュリティグループ: `describe-security-groups.md`（中立チェック）、`create-security-group.md`（SG_ID 取得）、`authorize-security-group-ingress.md`
+  - VPC フローログ: `describe-flow-logs.md`（中立チェック）、`create-flow-logs-s3.md`、`create-flow-logs-cloudwatch.md`
+- サブスニペットパターンを導入: `file://` パターンのスケルトンスニペットから `{% include variable %}` でポリシー JSON を外部ファイルとして取り込む方式
+  - `snippets/s3/put-bucket-policy.md` をスケルトンに変換、`snippets/s3/policies/full-restriction.json.j2` を抽出
+  - `snippets/kms/put-key-policy.md` をスケルトンに変換、`snippets/kms/policies/admin-usage.json.j2` を抽出
+  - runbook YAML に `bucket_policy_template` / `key_policy_template` パラメータを追加
+- 開発者向けドキュメント4件を `docs/` に新設: `doc-overview.md`、`doc-snippet.md`、`doc-generator.md`、`doc-runbook.md`
+- SPEC §8 に EC2 スニペット15件追加、S3/KMS のサブスニペット記述を更新
+- KNOWLEDGE.md に §1.8 サブスニペットパターン、§7.6 ヒアドキュメント空行 TIPS を追加
+
+### 決定事項
+- **サブスニペットパターン（§1.8）の導入**。同一スケルトン（cat + jq + CLI）で JSON 本体だけを差し替える場合に、`{% include variable %}` でポリシー JSON を外部化する。Jinja2 の既存機構だけで実現でき、ジェネレータ側の変更は不要
+- **スケルトン側が構造を保証する**。`{% include %}` と `EOF` の間に空行を挿入し、`trim_blocks` による改行消費の影響をスケルトン側で吸収する。「作為を持っている側でコントロールする」原則
+- **Create スニペットにシェル変数キャプチャを含める**。`create-subnet.md` は SUBNET_ID、`create-internet-gateway.md` は IGW_ID 等を `describe` + `--query` でシェル変数に取得。後続操作（attach、associate、route 追加等）で使用
+- **適用対象は `put-bucket-policy.md` と `put-key-policy.md` のみ**。`put-bucket-lifecycle-configuration.md`（小規模固定 JSON）や CloudFormation スニペット（ループパターン、別の関心事）はサブスニペット化の対象外
+
 ## 2026-05-10: DynamoDB テーブル操作対応（フェーズ5）
 
 ### 実施内容

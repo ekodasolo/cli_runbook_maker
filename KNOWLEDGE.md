@@ -220,6 +220,44 @@ aws <service> wait <condition> \
 **TIPS**: 人間が読みながら操作する手順書では、wait の前に「プロンプトが返るまで待つ」等の案内を入れると親切。
 
 
+### 1.8 サブスニペットパターン（`{% include %}` による JSON 外部化）
+
+`file://` パターン（§1.4）で、JSON ドキュメント部分をランブックごとに差し替えたい場合に使う。スケルトンスニペットが `{% include variable_name %}` でポリシー JSON を取り込み、runbook YAML のパラメータでパスを指定する。
+
+スケルトンスニペット（`put-bucket-policy.md`）:
+```
+バケットポリシーの JSON ドキュメントを作成する。
+
+```bash
+cat << 'EOF' > /tmp/bucket-policy.json
+{% include bucket_policy_template %}
+
+EOF
+```
+
+```bash
+jq . /tmp/bucket-policy.json
+```
+
+```bash
+aws s3api put-bucket-policy \
+    --bucket {{ bucket_name }} \
+    --policy file:///tmp/bucket-policy.json \
+    --region {{ region }}
+```
+```
+
+サブスニペット（`snippets/s3/policies/full-restriction.json.j2`）:
+- 通常の Jinja2 テンプレートとして `{{ bucket_name }}` 等の変数を展開できる
+- ファイルパスは runbook YAML の `params` で指定: `bucket_policy_template: snippets/s3/policies/full-restriction.json.j2`
+
+該当例: `put-bucket-policy.md` + `policies/full-restriction.json.j2`, `put-key-policy.md` + `policies/admin-usage.json.j2`
+
+**適用基準**: 同一スケルトン（cat + jq + CLI）で JSON 本体だけが変わる場合に使う。スケルトン自体の構造が変わる場合は別スニペットに分離する方が適切。
+
+**設計原則**: スケルトン側（作為を持っている側）が構造の整合性を保証する。サブスニペットの内容に依存しない（§7.6 参照）。
+
+
 ## 2. ランブック設計パターン
 
 ### 2.1 CREATE パターン
@@ -413,3 +451,18 @@ value: "true"
 ### 7.5 ループ変数の未指定ガード
 
 `{% for p in stack_parameters %}` のようなループを使うスニペットでは、`stack_parameters` が runbook YAML で定義されていない場合も正常動作しなければならない。ループだけでなく、そのループに依存するブロック全体（ヒアドキュメント、jq チェック、CLI オプション、結果例のセクション）を `{% if stack_parameters %}` で囲むこと。ガードがないと、パラメータなしの場合に空の JSON ファイル作成や不要なオプション付与が出力される。
+
+### 7.6 `{% include %}` + ヒアドキュメントの空行挿入
+
+`trim_blocks=True` 環境で `{% include variable %}` を使うと、`{% include %}` タグ直後の改行が消費される。サブスニペット（included ファイル）の末尾に改行があっても、`EOF` との間に改行が残らず `}EOF` のように結合してしまうことがある。
+
+対処として、スケルトンスニペット側で `{% include %}` と `EOF` の間に空行を挿入する:
+
+```
+cat << 'EOF' > /tmp/bucket-policy.json
+{% include bucket_policy_template %}
+
+EOF
+```
+
+この空行により、サブスニペットの末尾改行の有無に関係なく `EOF` が独立した行になる。「作為を持っている側（スケルトン）でコントロールする」原則に基づく設計判断。

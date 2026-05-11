@@ -37,6 +37,7 @@ KMS キーポリシーを設定する CLI 手順書。
 | key_alias | `project-dev-training-key` |
 | key_description | `Project Dev training KMS key` |
 | key_name | `project-dev-training-key` |
+| key_policy_template | `snippets/kms/policies/admin-usage.json.j2` |
 | key_ref | `alias/project-dev-training-key` |
 | account_id | `123456789012` |
 | key_admin_role_arn | `arn:aws:iam::123456789012:role/project-dev-admin-role` |
@@ -118,11 +119,7 @@ aws kms get-key-policy \
 
 #### 2.1 リソースの操作 (MODIFY)
 
-キーポリシーの JSON ドキュメントを作成する。以下のポリシーは3つの権限を設定する。
-
-1. ルートアカウントへのフルアクセス（キー管理の基盤）
-2. 管理者ロールへのキー管理権限
-3. 利用者ロールへの暗号化・復号権限
+キーポリシーの JSON ドキュメントを作成する。
 
 ```bash
 cat << 'EOF' > /tmp/key-policy.json
@@ -180,6 +177,7 @@ cat << 'EOF' > /tmp/key-policy.json
         }
     ]
 }
+
 EOF
 ```
 
