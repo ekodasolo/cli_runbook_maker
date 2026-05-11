@@ -1,0 +1,11 @@
+# プロジェクト共通パラメータ
+#
+# 複数の手順書から params_files: で参照される共通値を集約する。
+# サービスドメインごとにファイルを分けると、1.1 パラメータ表に
+# 無関係な値が混ざらず読みやすくなる。
+#
+# 使い方:
+#   runbook YAML の params_files に相対パスで指定する。
+#   例: params_files: [../params/common.yaml]
+params:
+  region: ap-northeast-1

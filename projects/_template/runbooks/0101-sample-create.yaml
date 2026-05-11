@@ -1,0 +1,47 @@
+# サンプル手順書 YAML（CREATE パターン）
+#
+# コピーして書き換える。不要になったらこのファイル自体を削除する。
+# 各フィールドの詳細は docs/doc-runbook.md を参照。
+runbook:
+  id: "0101"
+  title: "リソースを作成する"
+  about: |
+    TODO: 手順の概要を記述する。
+  services:
+    - TODO
+  duration: "5 Min"
+  operation: CREATE
+
+  before:
+    - TODO: 作業前に満たすべき条件を記述する。
+  after:
+    - TODO: 完了の判定基準を記述する。
+
+  template: runbook
+
+  pre_checks:
+    - title: "対象リソースの非存在確認"
+      description: |
+        TODO: 事前確認の説明を記述する。
+      snippet: snippets/TODO/describe-xxx.md
+
+  main:
+    snippet: snippets/TODO/create-xxx.md
+
+  post_checks:
+    - title: "リソースの作成確認"
+      description: |
+        TODO: 事後確認の説明を記述する。
+      snippet: snippets/TODO/describe-xxx.md
+
+  params_files:
+    - ../params/common.yaml
+
+  # このランブック固有のパラメータ（共通 params に含まれない値）
+  params: {}
+
+  # 次の手順書がある場合はコメントを外す
+  # navigation:
+  #   next:
+  #     title: "次の手順書のタイトル"
+  #     link: "./0102-next-step.md"
