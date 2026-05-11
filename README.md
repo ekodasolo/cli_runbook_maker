@@ -41,10 +41,10 @@ python generate.py <runbook.yaml> [<runbook.yaml> ...]
 
 ```bash
 # 1件だけ生成
-python generate.py examples/runbooks/0301-create-s3-bucket.yaml
+python generate.py projects/example/runbooks/0301-create-s3-bucket.yaml
 
 # 全件一括生成
-python generate.py examples/runbooks/*.yaml
+python generate.py projects/example/runbooks/*.yaml
 ```
 
 生成物は `<project>/dist/runbooks/<basename>.md` に出力される。
@@ -79,7 +79,7 @@ aws s3api get-bucket-versioning \
 複数の手順書で共有する値を YAML にまとめる。
 
 ```yaml
-# examples/params/training-s3.yaml
+# projects/example/params/training-s3.yaml
 params:
   region: ap-northeast-1
   bucket_name: project-dev-training-bucket
@@ -130,7 +130,7 @@ runbook:
 #### 4. 生成して確認する
 
 ```bash
-python generate.py examples/runbooks/0301-create-s3-bucket.yaml
+python generate.py projects/example/runbooks/0301-create-s3-bucket.yaml
 ```
 
 ## ディレクトリ構成
@@ -143,19 +143,20 @@ cli_runbook_maker/
   snippets/
     {service}/                    # サービスごとにディレクトリを分割
       {aws-cli-subcommand}.md     # 1スニペット = 1 AWS CLI コマンド
-  examples/                       # サンプルプロジェクト
-    params/                       # 共通パラメータ（サービスドメイン単位）
-      training-s3.yaml
-      training-kms.yaml
-      ...
-    runbooks/                     # 手順書 YAML 定義
-      0301-create-s3-bucket.yaml
-      0302-enable-s3-versioning.yaml
-      ...
-    dist/runbooks/                # 生成物（Markdown）
-      0301-create-s3-bucket.md
-      0302-enable-s3-versioning.md
-      ...
+  projects/                       # プロジェクトごとの手順書定義・生成物
+    example/                      # サンプルプロジェクト
+      params/                     # 共通パラメータ（サービスドメイン単位）
+        training-s3.yaml
+        training-kms.yaml
+        ...
+      runbooks/                   # 手順書 YAML 定義
+        0301-create-s3-bucket.yaml
+        0302-enable-s3-versioning.yaml
+        ...
+      dist/runbooks/              # 生成物（Markdown）
+        0301-create-s3-bucket.md
+        0302-enable-s3-versioning.md
+        ...
 ```
 
 ## 生成される手順書の構造

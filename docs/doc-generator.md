@@ -50,11 +50,11 @@ Jinja2 の `Environment` を構築する。設定値はすべて意図がある:
 runbook YAML のパスから生成物の出力パスを算出する。
 
 ```
-examples/runbooks/0301-create-s3-bucket.yaml
-  → examples/dist/runbooks/0301-create-s3-bucket.md
+projects/example/runbooks/0301-create-s3-bucket.yaml
+  → projects/example/dist/runbooks/0301-create-s3-bucket.md
 ```
 
-規約: runbook YAML は `<project>/runbooks/` 直下に置くこと。`<project>` は `runbooks/` の親ディレクトリ。
+規約: runbook YAML は `projects/<project>/runbooks/` 直下に置くこと。
 
 ### `render_runbook(runbook_yaml_path, env)`
 

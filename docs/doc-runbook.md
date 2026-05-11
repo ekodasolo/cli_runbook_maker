@@ -249,7 +249,7 @@ params_files:
 各ファイルはトップレベルに `params:` キーを持つ必要がある:
 
 ```yaml
-# examples/params/training-s3.yaml
+# projects/example/params/training-s3.yaml
 params:
   region: ap-northeast-1
   bucket_name: project-dev-training-bucket
@@ -334,7 +334,7 @@ params               （最優先）
 サービスドメイン単位で分離する。1.1 のパラメータ表に、そのランブックと無関係な値が表示されないようにするため。
 
 ```
-examples/params/
+projects/example/params/
   training-common.yaml     # region, vpc_cidr, vpc_name          → 01xx
   training-ssm.yaml        # region, parameter_namespace          → 02xx
   training-s3.yaml         # region, bucket_name                  → 03xx
@@ -492,10 +492,10 @@ runbook:
 
 ### 配置場所
 
-ランブック YAML は `<project>/runbooks/` 直下に配置する。`<project>` は `runbooks/` を含む任意のディレクトリ（例では `examples/`）。
+ランブック YAML は `projects/<project>/runbooks/` 直下に配置する。
 
 ```
-examples/
+projects/example/
   runbooks/
     0301-create-s3-bucket.yaml
     0302-enable-s3-versioning.yaml

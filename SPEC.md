@@ -43,25 +43,26 @@ AWS CLI作業手順書の作成を効率化するツールキット。
 cli_runbook_maker/
 ├── generate.py                     # 生成ツール
 ├── requirements.txt
-├── snippets/                       # コマンドスニペット
-│   └── ec2/
-│       ├── create-vpc.md
-│       ├── describe-vpcs.md
-│       ├── describe-vpc-attribute.md
-│       └── modify-vpc-attribute.md
-├── templates/                      # 手順書テンプレート
-│   ├── ec2-create-vpc.md.j2
-│   └── ec2-modify-vpc-attribute.md.j2
-├── examples/                       # サンプル兼検証用プロジェクト
-│   ├── params/
-│   │   └── training-common.yaml    # 共通パラメータ
-│   ├── runbooks/
-│   │   ├── 0101-create-vpc.yaml    # 手順書定義
-│   │   └── 0102-modify-dns-hostname.yaml
-│   └── dist/                       # 生成物
-│       └── runbooks/
-│           ├── 0101-create-vpc.md
-│           └── 0102-modify-dns-hostname.md
+├── snippets/                       # コマンドスニペット（共通資産）
+│   ├── ec2/
+│   ├── s3/
+│   │   └── policies/               # サブスニペット（ポリシー JSON テンプレート）
+│   ├── kms/
+│   │   └── policies/
+│   └── ...
+├── templates/                      # 手順書テンプレート（共通資産）
+│   └── runbook.md.j2
+├── projects/                       # プロジェクトごとの手順書定義・生成物
+│   └── example/                    # サンプル兼検証用プロジェクト
+│       ├── params/
+│       │   └── training-common.yaml
+│       ├── runbooks/
+│       │   ├── 0101-create-vpc.yaml
+│       │   └── 0102-modify-dns-hostname.yaml
+│       └── dist/
+│           └── runbooks/
+│               ├── 0101-create-vpc.md
+│               └── 0102-modify-dns-hostname.md
 ├── SPEC.md
 ├── TASKS.md
 ├── LOGS.md
@@ -75,11 +76,12 @@ cli_runbook_maker/
 | --- | --- |
 | `templates/` | 手順書テンプレート（共通資産） |
 | `snippets/` | AWS CLI コマンドスニペット（共通資産） |
-| `<project>/runbooks/` | 業務ごとの手順書 YAML 定義 |
-| `<project>/params/` | 業務ごとの共通パラメータ YAML（任意） |
-| `<project>/dist/runbooks/` | 業務ごとの手順書 Markdown 生成物 |
+| `projects/` | プロジェクトごとのディレクトリを格納する親ディレクトリ |
+| `projects/<project>/runbooks/` | 業務ごとの手順書 YAML 定義 |
+| `projects/<project>/params/` | 業務ごとの共通パラメータ YAML（任意） |
+| `projects/<project>/dist/runbooks/` | 業務ごとの手順書 Markdown 生成物 |
 
-`<project>` は、`runbooks/` を含む任意のディレクトリ。リポジトリ内では `examples/` がそれに相当する。将来的に他業務の手順書を追加する場合は `clientA/`, `internal/` 等を兄弟ディレクトリとして並べる。
+`projects/example/` がサンプル兼検証用プロジェクト。実案件を追加する場合は `projects/project-a/` のように兄弟ディレクトリとして並べる。
 
 ### 3.2 テンプレート・スニペットの探索
 
@@ -194,7 +196,7 @@ runbook:
 ### 4.2 共通パラメータYAML
 
 ```yaml
-# examples/params/training-common.yaml
+# projects/example/params/training-common.yaml
 params:
   region: ap-northeast-1
   vpc_cidr: "10.0.0.0/24"
@@ -344,10 +346,10 @@ params:
 
 ```bash
 # 1つの手順書を生成
-python generate.py examples/runbooks/0101-create-vpc.yaml
+python generate.py projects/example/runbooks/0101-create-vpc.yaml
 
 # 複数指定（順序自由、まとめて生成）
-python generate.py examples/runbooks/*.yaml
+python generate.py projects/example/runbooks/*.yaml
 ```
 
 引数は手順書YAMLのパスのみを受け取る。テンプレート・スニペットは `generate.py` と同じディレクトリ配下から参照する（`--toolkit` 等のフラグは持たない）。
@@ -358,7 +360,7 @@ python generate.py examples/runbooks/*.yaml
 <runbook_yaml>          → <runbook_yaml.parent.parent>/dist/runbooks/<basename>.md
 ```
 
-例：`examples/runbooks/0101-create-vpc.yaml` → `examples/dist/runbooks/0101-create-vpc.md`
+例：`projects/example/runbooks/0101-create-vpc.yaml` → `projects/example/dist/runbooks/0101-create-vpc.md`
 
 定義（YAML）と生成物（MD）は完全に分離し、`dist/` 配下に runbooks/ の構造をミラーして配置する。
 
